@@ -22,5 +22,6 @@ def main():
     else:
         print(f"No open ports found on {target} between ports {start} and {end}.")
 
+
 if __name__ == "__main__":
     main()
