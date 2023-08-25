@@ -1,5 +1,6 @@
 import sys
 from port_scanner import PortScanner
+from probes import Probes
 
 
 def main():
@@ -21,6 +22,10 @@ def main():
         print(f"Open ports on {target}: {', '.join(map(str, open_ports))}")
     else:
         print(f"No open ports found on {target} between ports {start} and {end}.")
+
+    # Run probes if there are open ports
+    if open_ports:
+        Probes(target, open_ports).tcp_syn_probe()
 
 
 if __name__ == "__main__":
