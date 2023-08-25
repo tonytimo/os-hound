@@ -22,10 +22,20 @@ def main():
         print(f"Open ports on {target}: {', '.join(map(str, open_ports))}")
     else:
         print(f"No open ports found on {target} between ports {start} and {end}.")
+        sys.exit(1)
 
-    # Run probes if there are open ports
-    if open_ports:
-        Probes(target, open_ports).tcp_syn_probe()
+    p = Probes(target, open_ports)
+    p.tcp_syn_probe()
+    p.icmp_echo_probe()
+    p.tcp_ecn_probe()
+    p.tcp_probe('T2')
+    p.tcp_probe('T3')
+    p.tcp_probe('T4')
+    p.tcp_probe('T5')
+    p.tcp_probe('T6')
+    p.tcp_probe('T7')
+    p.udp_probe()
+
 
 
 if __name__ == "__main__":
