@@ -42,7 +42,7 @@ class Probes:
         for pkt in pkt_list:
             response = sr1(pkt, verbose=0, timeout=2)
             if response:
-                res_list.append(response[TCP])
+                res_list.append(response)
             sleep(0.1)
 
         return res_list
@@ -70,7 +70,7 @@ class Probes:
         # Send the second ICMP request
         response2 = sr1(pkt2, timeout=1, verbose=0)
 
-        return response1[ICMP], response2[ICMP]
+        return [response1, response2]
 
     def tcp_ecn_probe(self):
         open_port = random.choice(self.open_ports)
@@ -100,7 +100,7 @@ class Probes:
         # Send the packet
         response = sr1(pkt, timeout=1, verbose=0)
 
-        return response[TCP]
+        return response
 
     def tcp_probe(self, probe_type):
         open_port = random.choice(self.open_ports)
@@ -143,7 +143,7 @@ class Probes:
         # Send the packet
         response = sr1(pkt, timeout=1, verbose=0)
 
-        return response[TCP]
+        return response
 
     def udp_probe(self):
         # Constructing the IP packet
@@ -166,7 +166,7 @@ class Probes:
         # Checking the response for ICMP port unreachable
         if response and response.haslayer(ICMP) and response[ICMP].type == 3 and response[ICMP].code == 3:
             print("Received ICMP port unreachable message.")
-            return response[ICMP]
+            return response
         else:
             print("No ICMP port unreachable message received.")
             return None
