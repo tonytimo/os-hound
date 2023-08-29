@@ -11,6 +11,7 @@ class Probes:
 
     def tcp_syn_probe(self):
         res_list = []
+        probe_type = "SYN"
         open_port = random.choice(self.open_ports)
         # Generate random sequence and acknowledgment numbers
         seq_num = random.randint(0, (2 ** 32) - 1)
@@ -45,9 +46,10 @@ class Probes:
                 res_list.append(response)
             sleep(0.1)
 
-        return res_list
+        return res_list, probe_type
 
     def icmp_echo_probe(self):
+        probe_type = "IE"
         # First ICMP Echo Request
         icmp_1 = ICMP(type=8, code=9, id=random.randint(0, 65535), seq=295)  # type=8 means Echo Request
         payload_1 = b'\x00' * 120
@@ -70,20 +72,18 @@ class Probes:
         # Send the second ICMP request
         response2 = sr1(pkt2, timeout=1, verbose=0)
 
-        return [response1, response2]
+        return [response1, response2], probe_type
 
     def tcp_ecn_probe(self):
+        probe_type = "ECN"
         open_port = random.choice(self.open_ports)
-        # Constructing the TCP packet
-        tcp_flags = 'C'  # CWR flag
-        tcp_flags += 'E'  # ECE flag
 
         # Defining the TCP options
         tcp_options = [('WScale', 10), ('NOP', None), ('MSS', 1460), ('SAckOK', ''), ('NOP', None), ('NOP', None)]
 
         tcp_pkt = TCP(sport=random.randint(1024, 65535),
                       dport=open_port,
-                      flags=tcp_flags,
+                      flags='SEC',
                       seq=random.randint(0, 4294967295),
                       ack=0,
                       urgptr=0xF7F5,
@@ -100,10 +100,11 @@ class Probes:
         # Send the packet
         response = sr1(pkt, timeout=1, verbose=0)
 
-        return response
+        return response, probe_type
 
     def tcp_probe(self, probe_type):
         open_port = random.choice(self.open_ports)
+
         # Common TCP options for T2-T7 except T7's window scale
         tcp_options = [('WScale', 10), ('NOP', None), ('MSS', 265), ('Timestamp', (0xFFFFFFFF, 0)), ('SAckOK', '')]
 
@@ -143,9 +144,10 @@ class Probes:
         # Send the packet
         response = sr1(pkt, timeout=1, verbose=0)
 
-        return response
+        return response, probe_type , pkt[TCP].seq
 
     def udp_probe(self):
+        probe_type = "U1"
         # Constructing the IP packet
         ip_pkt = IP(dst=self.target_ip, id=0x1042)
 
@@ -166,7 +168,7 @@ class Probes:
         # Checking the response for ICMP port unreachable
         if response and response.haslayer(ICMP) and response[ICMP].type == 3 and response[ICMP].code == 3:
             print("Received ICMP port unreachable message.")
-            return response
+            return response, probe_type
         else:
             print("No ICMP port unreachable message received.")
             return None

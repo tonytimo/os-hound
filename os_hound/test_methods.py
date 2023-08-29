@@ -293,3 +293,179 @@ class TestMethods:
             if responses and responses.haslayer(TCP):
                 window_size = responses[TCP].window
                 return window_size
+
+    def check_responsiveness(self, probe_type: str, response: IP/TCP | IP/ICMP | IP/UDP, has_closed_tcp_port: bool = True):
+        """
+        Checks the responsiveness of a target to a given probe.
+
+        :param probe_type: The type of the probe. e.g. 'IE', 'U1', 'T5', etc.
+        :param response: Whether a response was received for the probe.
+        :param has_closed_tcp_port: Default is True. Indicates if there's a closed TCP port for a target.
+
+        Returns:
+        :returns 'Y' if the target responded, 'N' otherwise.
+        """
+
+        # If no response is received
+        if response is None:
+            # If it's IE or U1 probes, don't set R=N
+            if probe_type in ['IE', 'U1']:
+                return ""
+            # If it's T5, T6, or T7 and we don't have a closed TCP port, don't set R=N
+            elif probe_type in ['T5', 'T6', 'T7'] and not has_closed_tcp_port:
+                return ""
+            else:
+                return "N"
+        else:
+            return "Y"
+
+    def check_dont_fragment_bit(self, response: IP/TCP | IP/ICMP | IP/UDP):
+        """
+        Checks if the 'don't fragment' bit in the IP header of a packet is set.
+
+        Args:
+        :param response: A representation of the IP packet. Assumes the packet has a key 'DF' indicating the state of the 'don't fragment' bit.
+
+        Returns:
+        :returns: 'Y' if the 'don't fragment' bit is set, 'N' otherwise.
+        """
+        if response.haslayer(IP):  # Check if packet has an IP layer
+            if (response[IP].flags & 0x2) != 0:
+                return "Y"
+            else:
+                return "N"
+
+    def dfi_test_value(self, response: list[IP/ICMP]):
+        """
+        Determine the DFI test value based on the DF bits of the two ICMP echo request probe responses.
+
+        :param response: List of ICMP echo request probe responses.
+        :return: DFI test value ('N', 'S', 'Y', or 'O')
+        """
+        if len(response) != 2:
+            return None
+
+        df1 = (response[0][IP].flags & 0x2) != 0
+        df2 = (response[1][IP].flags & 0x2) != 0
+
+        if not df1 and not df2:
+            return 'N'
+        elif df1 == df2:
+            return 'S'
+        elif df1 and df2:
+            return 'Y'
+        else:
+            return 'O'
+
+    def compute_initial_ttl(self, response: IP/TCP | IP/UDP | IP/ICMP, u1_response):
+        """
+        Compute the initial TTL of the target's response.
+
+        :param response: A response object from the tcp_probe, icmp_echo_probe, tcp_ecn_probe, udp_probe.
+        :param u1_response: A response object from the udp_probe.
+        :return: Initial TTL value.
+        """
+        # Determine hop count
+        hop_count = u1_response[IP].ttl - u1_response[ICMP].ttl
+
+        # Compute initial TTL of the target's response
+        if response.haslayer(TCP):
+            initial_ttl = response[TCP].ttl + hop_count
+        elif response.haslayer(UDP):
+            initial_ttl = response[UDP].ttl + hop_count
+        else:
+            initial_ttl = response[ICMP].ttl + hop_count
+
+        return initial_ttl
+
+    def ttl_guess_test(self, response: IP/TCP | IP/UDP | IP/ICMP):
+        """
+        Determine the TTL guess test value based on the TTL value of the target's response.
+
+        :param response: A response object from the tcp_probe, icmp_echo_probe, tcp_ecn_probe, udp_probe.
+        :return: TTL guess test value (32, 64, 128, or 255).
+        """
+        # If there's a response, extract the TTL
+        if response.haslayer(TCP):
+            received_ttl = response[TCP].ttl
+        elif response.haslayer(UDP):
+            received_ttl = response[UDP].ttl
+        else:
+            received_ttl = response[ICMP].ttl
+
+        # Round up to the nearest value
+        if received_ttl <= 32:
+            tg = 32
+        elif received_ttl <= 64:
+            tg = 64
+        elif received_ttl <= 128:
+            tg = 128
+        else:
+            tg = 255
+
+        return tg
+
+
+    def congestion_control_test(self, response: IP/TCP):
+        """
+        Extract the ECN-related flags from the TCP layer of the packet and determine
+        the CC value.
+
+        :param response: A response object from the tcp_ecn_probe.
+        :return: CC value ('Y', 'N', 'S', or 'O').
+        """
+
+        # Check if the packet has a TCP layer
+        if response.haslayer(TCP):
+            # Extract the flags
+            ece_flag = (response[TCP].flags & 0x40) != 0  # ECE is the 7th bit of flags field in TCP (0x40 in hex)
+            cwr_flag = (response[TCP].flags & 0x80) != 0  # CWR is the 8th bit of flags field in TCP (0x80 in hex)
+
+            # Determine the CC value based on the flags
+            if ece_flag and not cwr_flag:
+                return 'Y'
+            elif not ece_flag and not cwr_flag:
+                return 'N'
+            elif ece_flag and cwr_flag:
+                return 'S'
+            else:
+                return 'O'
+
+
+    def check_tcp_quirks(self, response: IP/TCP):
+        """
+        Extract the TCP quirks from the TCP layer of the packet.
+        :param response: Response object from the tcp_probe or tcp_ecn_probe.
+        :return: returns a string of TCP quirks and if no quirks are found returns none.
+        """
+        q_string = ""
+
+        # Check if the reserved field in TCP header is non-zero
+        if response[TCP].reserved != 0:
+            q_string += "R"
+
+        # Check if the URG flag is not set but urgent pointer field is non-zero
+        if not response[TCP].flags.URG and response[TCP].urgptr != 0:
+            q_string += "U"
+
+        return q_string or None
+
+    def sequence_test(self, response: IP/TCP, seq_number: int):
+        """
+        Determine the S test value based on the sequence number and the ack number of the response.
+
+        :param response: Response object from the tcp_probe.
+        :param seq_number: the original sequence number of the probe.
+        :return: returns the S test value ('Z', 'A', 'A+', or 'O').
+        """
+        ack_number = response[TCP].ack
+
+        # Check conditions and determine the S test value
+        if seq_number == 0:
+            return 'Z'
+        elif seq_number == ack_number:
+            return 'A'
+        elif seq_number == ack_number + 1:
+            return 'A+'
+        else:
+            return 'O'

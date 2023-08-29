@@ -25,19 +25,17 @@ def main():
     else:
         print(f"No open ports found on {target} between ports {start} and {end}.")
 
-    # p = Probes(target, open_ports)
+    p = Probes(target, open_ports)
     # p.tcp_syn_probe()
     # p.icmp_echo_probe()
     # p.tcp_ecn_probe()
     # p.tcp_probe('T2')
     # p.tcp_probe('T3')
-    # p.tcp_probe('T4')
-    # p.tcp_probe('T5')
+    p.tcp_probe('T4')
+    p.tcp_probe('T5')
     # p.tcp_probe('T6')
     # p.tcp_probe('T7')
     # p.udp_probe()
-    p = DbParser().parse_db()
-    print(len(p))
 
 
 
