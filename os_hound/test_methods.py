@@ -1,16 +1,15 @@
+import zlib
 from helper import HelperFunctions
-from scapy.layers.inet import IP, TCP, ICMP, UDP
+from scapy.layers.inet import IP, TCP, ICMP, UDP, IPerror, UDPerror
 import math
 import statistics
-
-#TODO: ended in TCP initial window size (W, W1–W6) (done) next time start from the R test
 
 
 class TestMethods:
     def __init__(self):
         pass
 
-    def tcp_isn_gcd(self, responses: list[IP/TCP]):
+    def tcp_isn_gcd(self, responses: list[IP]):
         """
         Calculate the differences between each of the two consecutive sequences in the give responses and
         compute the GCD value of the differences.
@@ -86,7 +85,7 @@ class TestMethods:
 
         return sp
 
-    def ip_id_sequence(self, responses: list[IP/TCP] | list[IP/ICMP], test_type: str):
+    def ip_id_sequence(self, responses: list[IP], test_type: str):
         """
         Calculate the IP ID sequence type based on the given ip_ids and the test type.
 
@@ -148,11 +147,12 @@ class TestMethods:
         # 7. If none of the previous steps
         return None
 
-    def shared_ip_id(self, responses: list[IP/TCP], icmp_responses: list[IP/ICMP]):
+    def shared_ip_id(self, responses: list[IP], icmp_responses: list[IP]):
+        #TODO: Remeber to check the docs when building the dict  we need to check the II and TI tests before this one
         """
         Calculate the Shared IP ID sequence Boolean (SS).
 
-        :param responses: List of TCP SYN response objects.
+        :param responses: List of TCP SYN response objects from the tcp_syn_probe.
         :param icmp_responses: List of ICMP response objects.
         :return: 'S' if the sequence is shared, 'O' if it is not, and None if the test is not included.
         """
@@ -168,30 +168,7 @@ class TestMethods:
             if response and response.haslayer(IP):
                 icmp_ip_ids.append(response[IP].id)
 
-        # Define the result for IP ID sequence generation algorithm
-        def calculate_ip_id_sequence(ip_ids):
-            differences = [(ip_ids[i + 1] - ip_ids[i]) % 65536 for i in range(len(ip_ids) - 1)]
-
-            if all(id_val == 0 for id_val in ip_ids):
-                return "Z"
-            if len(set(ip_ids)) == 1:
-                return hex(ip_ids[0])
-            if any(diff > 1000 and diff % 256 != 0 for diff in differences):
-                return "RI"
-            if all(diff % 256 == 0 and diff <= 5120 for diff in differences):
-                return "BI"
-            if all(diff < 10 for diff in differences):
-                return "I"
-            return None
-
-        ti_result = calculate_ip_id_sequence(tcp_ip_ids)
-        ii_result = calculate_ip_id_sequence(icmp_ip_ids)
-
-        # Check inclusion criteria
-        if not (ii_result in ["RI", "BI", "I"] and ti_result == ii_result):
-            return None
-
-        # Calculate avg
+        # Calculate 'avg' based on TCP IP IDs
         avg = (tcp_ip_ids[-1] - tcp_ip_ids[0]) / (len(tcp_ip_ids) - 1)
 
         # Determine if sequences are shared or not
@@ -200,7 +177,7 @@ class TestMethods:
         else:
             return 'O'
 
-    def calculate_ts(self, responses: list[IP/TCP]):
+    def calculate_ts(self, responses: list[IP]):
         """
         Calculate the TCP timestamp option algorithm (TS).
 
@@ -236,7 +213,7 @@ class TestMethods:
         else:
             return str(round(math.log(avg_increment, 2)))
 
-    def extract_tcp_options(self, responses: list[IP/TCP] | IP/TCP):
+    def extract_tcp_options(self, responses: list[IP] | IP):
         """
         Extract TCP options from the given responses.
 
@@ -275,7 +252,7 @@ class TestMethods:
                         options_string += str(option[1])
             return options_string
 
-    def extract_tcp_window_size(self, responses: list[IP/TCP] | IP/TCP):
+    def extract_tcp_window_size(self, responses: list[IP] | IP):
         """
         Extract the TCP window size from the packet.
 
@@ -294,12 +271,12 @@ class TestMethods:
                 window_size = responses[TCP].window
                 return window_size
 
-    def check_responsiveness(self, probe_type: str, response: IP/TCP | IP/ICMP | IP/UDP, has_closed_tcp_port: bool = True):
+    def check_responsiveness(self, probe_type: str, response: IP, has_closed_tcp_port: bool = True):
         """
         Checks the responsiveness of a target to a given probe.
 
         :param probe_type: The type of the probe. e.g. 'IE', 'U1', 'T5', etc.
-        :param response: Whether a response was received for the probe.
+        :param response:response was received for the probe.
         :param has_closed_tcp_port: Default is True. Indicates if there's a closed TCP port for a target.
 
         Returns:
@@ -319,7 +296,7 @@ class TestMethods:
         else:
             return "Y"
 
-    def check_dont_fragment_bit(self, response: IP/TCP | IP/ICMP | IP/UDP):
+    def check_dont_fragment_bit(self, response: IP):
         """
         Checks if the 'don't fragment' bit in the IP header of a packet is set.
 
@@ -335,7 +312,7 @@ class TestMethods:
             else:
                 return "N"
 
-    def dfi_test_value(self, response: list[IP/ICMP]):
+    def dfi_test_value(self, response: list[IP]):
         """
         Determine the DFI test value based on the DF bits of the two ICMP echo request probe responses.
 
@@ -344,9 +321,11 @@ class TestMethods:
         """
         if len(response) != 2:
             return None
-
-        df1 = (response[0][IP].flags & 0x2) != 0
-        df2 = (response[1][IP].flags & 0x2) != 0
+        if response[0].haslayer(IP) and response[1].haslayer(IP):
+            df1 = (response[0][IP].flags & 0x2) != 0
+            df2 = (response[1][IP].flags & 0x2) != 0
+        else:
+            return None
 
         if not df1 and not df2:
             return 'N'
@@ -357,7 +336,7 @@ class TestMethods:
         else:
             return 'O'
 
-    def compute_initial_ttl(self, response: IP/TCP | IP/UDP | IP/ICMP, u1_response):
+    def compute_initial_ttl(self, response: IP, u1_response):
         """
         Compute the initial TTL of the target's response.
 
@@ -366,19 +345,22 @@ class TestMethods:
         :return: Initial TTL value.
         """
         # Determine hop count
-        hop_count = u1_response[IP].ttl - u1_response[ICMP].ttl
+        if u1_response.haslayer(TCP):
+            hop_count = u1_response[IP].ttl - u1_response[ICMP].ttl
 
-        # Compute initial TTL of the target's response
-        if response.haslayer(TCP):
-            initial_ttl = response[TCP].ttl + hop_count
-        elif response.haslayer(UDP):
-            initial_ttl = response[UDP].ttl + hop_count
+            # Compute initial TTL of the target's response
+            if response.haslayer(TCP):
+                initial_ttl = response[TCP].ttl + hop_count
+            elif response.haslayer(UDP):
+                initial_ttl = response[UDP].ttl + hop_count
+            else:
+                initial_ttl = response[ICMP].ttl + hop_count
+
+            return initial_ttl
         else:
-            initial_ttl = response[ICMP].ttl + hop_count
+            return None
 
-        return initial_ttl
-
-    def ttl_guess_test(self, response: IP/TCP | IP/UDP | IP/ICMP):
+    def ttl_guess_test(self, response: IP):
         """
         Determine the TTL guess test value based on the TTL value of the target's response.
 
@@ -406,7 +388,7 @@ class TestMethods:
         return tg
 
 
-    def congestion_control_test(self, response: IP/TCP):
+    def congestion_control_test(self, response: IP):
         """
         Extract the ECN-related flags from the TCP layer of the packet and determine
         the CC value.
@@ -432,25 +414,25 @@ class TestMethods:
                 return 'O'
 
 
-    def check_tcp_quirks(self, response: IP/TCP):
+    def check_tcp_quirks(self, response: IP):
         """
         Extract the TCP quirks from the TCP layer of the packet.
         :param response: Response object from the tcp_probe or tcp_ecn_probe.
         :return: returns a string of TCP quirks and if no quirks are found returns none.
         """
         q_string = ""
+        if response.haslayer(TCP):
+            # Check if the reserved field in TCP header is non-zero
+            if response[TCP].reserved != 0:
+                q_string += "R"
 
-        # Check if the reserved field in TCP header is non-zero
-        if response[TCP].reserved != 0:
-            q_string += "R"
+            # Check if the URG flag is not set but urgent pointer field is non-zero
+            if not response[TCP].flags.URG and response[TCP].urgptr != 0:
+                q_string += "U"
 
-        # Check if the URG flag is not set but urgent pointer field is non-zero
-        if not response[TCP].flags.URG and response[TCP].urgptr != 0:
-            q_string += "U"
+            return q_string or None
 
-        return q_string or None
-
-    def sequence_test(self, response: IP/TCP, seq_number: int):
+    def sequence_test(self, response: IP, seq_number: int):
         """
         Determine the S test value based on the sequence number and the ack number of the response.
 
@@ -458,14 +440,254 @@ class TestMethods:
         :param seq_number: the original sequence number of the probe.
         :return: returns the S test value ('Z', 'A', 'A+', or 'O').
         """
-        ack_number = response[TCP].ack
+        if response.haslayer(TCP):
+            ack_number = response[TCP].ack
 
-        # Check conditions and determine the S test value
-        if seq_number == 0:
-            return 'Z'
-        elif seq_number == ack_number:
-            return 'A'
-        elif seq_number == ack_number + 1:
-            return 'A+'
-        else:
-            return 'O'
+            # Check conditions and determine the S test value
+            if seq_number == 0:
+                return 'Z'
+            elif seq_number == ack_number:
+                return 'A'
+            elif seq_number == ack_number + 1:
+                return 'A+'
+            else:
+                return 'O'
+
+    def ack_test(self, response: IP, seq_number: int):
+        """
+        Determine the A test value based on the sequence number and the ack number of the response.
+
+        :param response: Response object from the tcp_probe.
+        :param seq_number: the original sequence number of the probe.
+        :return: returns the S test value ('Z', 'S', 'S+', or 'O').
+        """
+        if response.haslayer(TCP):
+            ack_number = response[TCP].ack
+
+            # Check conditions and determine the S test value
+            if ack_number == 0:
+                return 'Z'
+            elif seq_number == ack_number:
+                return 'S'
+            elif ack_number == seq_number + 1:
+                return 'S+'
+            else:
+                return 'O'
+
+    def extract_tcp_flags(self, response: IP):
+        """
+        Extract the TCP flags from the TCP layer of the response.
+
+        :param response: response object from the tcp_probe.
+        :return: returns a string of TCP flags.
+        """
+        if response.haslayer(TCP):
+            # Extract the flags from the TCP layer of the response
+            flags = response[TCP].flags
+
+            # Mapping of flag names to their respective byte values
+            flag_map = {
+                'E': 0x40,  # 64 in hexadecimal
+                'U': 0x20,  # 32
+                'A': 0x10,  # 16
+                'P': 0x08,  # 8
+                'R': 0x04,  # 4
+                'S': 0x02,  # 2
+                'F': 0x01   # 1
+            }
+
+            # Extract the set flags
+            set_flags = [flag for flag, value in flag_map.items() if flags & value]
+
+            # Return the set flags as a string
+            return ''.join(set_flags)
+
+    def get_rst_data_checksum(self, response: IP):
+        """
+        Checks if a given response is a TCP RST response with data.
+        If data is present, computes and returns its CRC32 checksum.
+        Otherwise, returns zero.
+
+        :param response: The Scapy response object.
+        :return: CRC32 checksum if data is present in the RST response; 0 otherwise.
+        """
+
+        # Check if the response is a TCP RST response with data
+        if response.haslayer(TCP):
+            if response[TCP].flags == 'R' and response[TCP].payload:
+                data = bytes(response[TCP].payload)
+                return zlib.crc32(data)
+            else:
+                return 0
+
+    def get_ip_total_length(self, response: IP):
+        """
+        Extracts the total length of an IP response if it's a port unreachable
+        response elicited by the U1 test.
+
+        Args:
+        - response: The Scapy response object.
+
+        Returns:
+        - The total length of the IP response if it's the required type; None otherwise.
+        """
+
+        # Check if the response is an ICMP "port unreachable" response
+        if response.haslayer(ICMP) and response[ICMP].type == 3:
+            return response[IP].len - 300
+
+        return None
+
+    def check_icmp_unused_field(self, response: IP):
+        """
+        Checks if the ICMP unused field is non-zero.
+
+        :param response: response object of the udp_probe.
+        :return: returns the ICMP unused field if it's non-zero; None otherwise.
+        """
+        # Check if the response is ICMP type 3 (destination unreachable)
+        if response.haslayer(ICMP) and response[ICMP].type == 3:
+            # Extract ICMP layer and take last four bytes before the embedded IP header
+            icmp_layer = bytes(response[ICMP])
+            unused_field = icmp_layer[4:8]  # Get bytes 5 to 8 of ICMP layer
+
+            # Check if the bytes are non-zero
+            if unused_field != b'\x00\x00\x00\x00':
+                print(f"Unused field has non-zero value: {unused_field}")
+                return unused_field
+        return None
+
+    def check_returned_ip_length(self, response: IP):
+        """
+        Checks if the total length of the embedded IP response is 328 bytes.
+
+        :param response: response object of the udp_probe.
+        :return: returns 'G' if the total length is 328 bytes; the actual value otherwise.
+        """
+        # Check if the response is an ICMP port unreachable error
+        if response.haslayer(ICMP) and response[ICMP].type == 3:
+            # Check if the response has the embedded original IP layer (IPerror in Scapy terms)
+            if response.haslayer(IPerror):
+                ip_length = response[IPerror].len  # Extract the total length of the embedded IP response
+
+                # Compare and determine value
+                if ip_length == 0x148:
+                    return "G"  # Good
+                else:
+                    return hex(ip_length)  # Return the actual value in hexadecimal format
+
+        return None
+
+    def check_returned_ip_id(self, response: IP):
+        """
+        Checks if the ID of the embedded IP response is 0x1042.
+        :param response: response object of the udp_probe.
+        :return: returns 'G' if the ID is 0x1042; the actual value otherwise.
+        """
+        # Check if the response is an ICMP port unreachable error
+        if response.haslayer(ICMP) and response[ICMP].type == 3:
+            # Check if the response has the embedded original IP layer (IPerror in Scapy terms)
+            if response.haslayer(IPerror):
+                ip_id = response[IPerror].id  # Extract the ID of the embedded IP response
+
+                # Compare and determine value
+                if ip_id == 0x1042:
+                    return "G"  # Good
+                else:
+                    return hex(ip_id)  # Return the actual value in hexadecimal format
+
+        return None
+
+    def check_returned_ip_checksum(self, response: IP):
+        """
+        Checks if the checksum of the embedded IP response is valid.
+        :param response:  response object of the udp_probe.
+        :return: returns 'G' if the checksum is valid; 'Z' if it's zero; 'I' if it's invalid; None otherwise.
+        """
+        # Check if the response is an ICMP port unreachable error
+        if response.haslayer(ICMP) and response[ICMP].type == 3:
+            # Check if the response has the embedded original IP layer (IPerror in Scapy terms)
+            if response.haslayer(IPerror):
+                checksum_received = response[IPerror].chksum
+                original_checksum = response[IP].chksum
+
+                # Compare and determine value
+                if checksum_received == original_checksum:
+                    return "G"  # Good
+                elif checksum_received == 0:
+                    return "Z"  # Zero
+                else:
+                    return "I"  # Invalid
+
+        return None
+
+    def check_returned_udp_checksum(self, response: IP):
+        """
+        Checks if the checksum of the embedded UDP response is valid.
+        :param response: response object of the udp_probe.
+        :return: returns 'G' if the checksum is valid; the actual value otherwise.
+        """
+        original_udp_checksum = None
+        # Check if the response is an ICMP port unreachable error
+        if response.haslayer(ICMP) and response[ICMP].type == 3:
+            # Check if the response has the embedded original UDP layer (UDPerror in Scapy terms)
+            if response.haslayer(UDPerror):
+                udp_checksum_received = response[UDPerror].chksum
+
+                # Compare and determine value
+                if udp_checksum_received == original_udp_checksum:
+                    return "G"  # Good
+                else:
+                    return hex(udp_checksum_received)
+
+        return None
+
+    def check_returned_udp_data_integrity(self, response: IP):
+        """
+        Checks if the data of the embedded UDP response is intact.
+        :param response: response object of the udp_probe.
+        :return: returns 'G' if the data is intact; 'I' if it's invalid; None otherwise.
+        """
+        # Check if the response is an ICMP port unreachable error
+        if response.haslayer(ICMP) and response[ICMP].type == 3:
+            # Check if the response has the embedded original UDP layer (UDPerror in Scapy terms)
+            if response.haslayer(UDPerror):
+                udp_payload = bytes(response[UDPerror].payload)  # Get the payload as bytes
+
+                # Check the payload data
+                if not udp_payload or all(byte == 0x43 for byte in udp_payload):  # No payload data or All payload bytes are 'C' (0x43)
+                    return "G"  # Good
+                else:
+                    return "I"  # Invalid
+
+        return None
+
+    def icmp_response_code(self, responses: list[IP]):
+        cd_string = ""
+        sent_probe_code1 = 9
+        sent_probe_code2 = 0
+
+        # Checking if the responses is ICMP echo reply
+        if responses[0].haslayer(ICMP) and responses[0][ICMP].type == 0 and responses[1].haslayer(ICMP) and responses[1][ICMP].type == 0:
+            code_value1 = responses[0][ICMP].code
+            code_value2 = responses[1][ICMP].code
+
+            if sent_probe_code1 == 0 and code_value1 == 0:
+                cd_string += "Z"
+            elif sent_probe_code1 == code_value1:
+                 cd_string += "S"
+            elif code_value1 != 0:
+                cd_string += f"{code_value1:02}"  # NN format
+            else:
+                cd_string += "O"
+
+            if sent_probe_code2 == 0 and code_value2 == 0:
+                cd_string += "Z"
+            elif sent_probe_code2 == code_value2:
+                 cd_string += "S"
+            elif code_value2 != 0:
+                cd_string += f"{code_value2:02}"  # NN format
+            else:
+                cd_string += "O"
+
+        return None

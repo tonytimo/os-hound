@@ -102,7 +102,11 @@ class Probes:
 
         return response, probe_type
 
-    def tcp_probe(self, probe_type):
+    def tcp_probe(self, probe_type: str):
+        if probe_type not in ['T2', 'T3', 'T4', 'T5', 'T6', 'T7']:
+            print("Invalid probe type.")
+            return None
+
         open_port = random.choice(self.open_ports)
 
         # Common TCP options for T2-T7 except T7's window scale
@@ -144,7 +148,7 @@ class Probes:
         # Send the packet
         response = sr1(pkt, timeout=1, verbose=0)
 
-        return response, probe_type , pkt[TCP].seq
+        return response, probe_type, pkt[TCP].seq
 
     def udp_probe(self):
         probe_type = "U1"
