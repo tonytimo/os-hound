@@ -14,7 +14,7 @@ class DbParser:
         db_os_list.pop(0)
         db_os_list.pop(0)
         for os in db_os_list:
-            os_dict = {"seq": {}, "ops": {}, "win": {}, "ecn": {}, "t1": {}, "t2": {}, "t3": {}, "t4": {}, "t5": {}, "t6": {}, "t7": {}, "u1": {}, "ie": {}, "os_title": ""}
+            os_dict = {"SEQ": {}, "OPS": {}, "WIN": {}, "ECN": {}, "T1": {}, "T2": {}, "T3": {}, "T4": {}, "T5": {}, "T6": {}, "T7": {}, "U1": {}, "IE": {}, "os_title": ""}
             temp = re.findall("([#].+)", os)
             for t in temp:
                 os = os.strip(t+"\n")

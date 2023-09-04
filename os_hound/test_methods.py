@@ -49,7 +49,7 @@ class TestMethods:
         :return: ISR value
         """
         # Calculate the rate of ISN counter increases per second for each diff1 value
-        seq_rates = [diff / 0.1 for diff in zip(diff)]
+        seq_rates = [diff / 0.1 for diff in diff]
 
         # Calculate the average rate
         avg_rate = sum(seq_rates) / len(seq_rates)
@@ -148,7 +148,6 @@ class TestMethods:
         return None
 
     def shared_ip_id(self, responses: list[IP], icmp_responses: list[IP]):
-        #TODO: Remeber to check the docs when building the dict  we need to check the II and TI tests before this one
         """
         Calculate the Shared IP ID sequence Boolean (SS).
 
@@ -220,7 +219,7 @@ class TestMethods:
         :param responses: List of TCP response objects from tcp_syn_probe.
         :return: List of options strings for each packet respectively.
         """
-        options = {"EOL": "L", "NOP": "N", "MSS": "N", "WScale": "W", "Timestamp": "T", "SAckOK": "S"}
+        options = {"EOL": "L", "NOP": "N", "MSS": "M", "WScale": "W", "Timestamp": "T", "SAckOK": "S"}
         options_string = ""
 
         if isinstance(responses, list):
@@ -228,6 +227,7 @@ class TestMethods:
             for response in responses:
                 if response and response.haslayer(TCP):
                     option_list = response[TCP].options
+                    options_string = ""
                     for option in option_list:
                         options_string += options[option[0]]
                         if option[0] == "Timestamp":
@@ -235,6 +235,11 @@ class TestMethods:
                             options_string += "1" if option[1][1] != 0 else "0"
                             continue
                         if option[1] is not None:
+                            if option[0] == "SAckOK" and option[1] == b'':
+                                continue
+                            if option[0] == "MSS":
+                                options_string += str(hex(option[1]))[2:]
+                                continue
                             options_string += str(option[1])
                 res_list.append(options_string)
             return res_list
@@ -249,6 +254,11 @@ class TestMethods:
                         options_string += "1" if option[1][1] != 0 else "0"
                         continue
                     if option[1] is not None:
+                        if option[0] == "SAckOK" and option[1] == "":
+                            continue
+                        if option[0] == "MSS":
+                            options_string += str(hex(option[1]))[:2]
+                            continue
                         options_string += str(option[1])
             return options_string
 
@@ -345,20 +355,13 @@ class TestMethods:
         :return: Initial TTL value.
         """
         # Determine hop count
-        if u1_response.haslayer(TCP):
+        if u1_response.haslayer(IP) and u1_response.haslayer(ICMP):
             hop_count = u1_response[IP].ttl - u1_response[ICMP].ttl
 
             # Compute initial TTL of the target's response
-            if response.haslayer(TCP):
-                initial_ttl = response[TCP].ttl + hop_count
-            elif response.haslayer(UDP):
-                initial_ttl = response[UDP].ttl + hop_count
-            else:
-                initial_ttl = response[ICMP].ttl + hop_count
+            initial_ttl = response[IP].ttl + hop_count
 
             return initial_ttl
-        else:
-            return None
 
     def ttl_guess_test(self, response: IP):
         """
@@ -368,12 +371,10 @@ class TestMethods:
         :return: TTL guess test value (32, 64, 128, or 255).
         """
         # If there's a response, extract the TTL
-        if response.haslayer(TCP):
-            received_ttl = response[TCP].ttl
-        elif response.haslayer(UDP):
-            received_ttl = response[UDP].ttl
+        if response and response.haslayer(IP):
+            received_ttl = response[IP].ttl
         else:
-            received_ttl = response[ICMP].ttl
+            return None
 
         # Round up to the nearest value
         if received_ttl <= 32:

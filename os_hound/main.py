@@ -1,9 +1,9 @@
 import sys
 from os_hound.db_parser import DbParser
 from os_hound.test_methods import TestMethods
+from os_hound.profile_builder import ProfileBuilder
 from port_scanner import PortScanner
 from probes import Probes
-
 
 
 def main():
@@ -27,19 +27,18 @@ def main():
         print(f"No open ports found on {target} between ports {start} and {end}.")
 
     p = Probes(target, open_ports)
-    # p.tcp_syn_probe()
-    p.icmp_echo_probe()
-    # p.tcp_ecn_probe()
-    # p.tcp_probe('T2')
-    # p.tcp_probe('T3')
-    # a, b, c = p.tcp_probe('T4')
-    # p.tcp_probe('T5')
-    # p.tcp_probe('T6')
-    # p.tcp_probe('T7')
-    # p.udp_probe()
+    probes = [p.tcp_syn_probe, p.icmp_echo_probe, p.tcp_ecn_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.udp_probe]
+    responses = {}
+    for i in range(0, len(probes)):
+        if probes[i] == p.tcp_probe:
+            response, probe_type, seq = probes[i](f'T{i-1}')
+            responses[probe_type] = [response, seq]
+            continue
+        response, probe_type = probes[i]()
+        responses[probe_type] = response
 
     # TestMethods().get_rst_data_checksum(a)
-
+    ProfileBuilder(responses).build_profile()
 
 
 if __name__ == "__main__":
