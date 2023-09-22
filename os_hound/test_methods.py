@@ -39,7 +39,7 @@ class TestMethods:
         else:
             print("Failed to compute ISN differences.")
 
-        return None
+        return "None"
 
     def tcp_isn_isr(self, diff: list[int]):
         """
@@ -98,15 +98,15 @@ class TestMethods:
         if isinstance(responses, list) and test_type in types:
             # TI: needs at least 3 TCP SYN probe
             if test_type == "TI" and len(responses) < 3:
-                return None
+                return "None"
             # CI: needs at least 2 out of the T5,T6,T7 probe
             if test_type == "CI" and len(responses) < 2:
-                return None
+                return "None"
             # II: needs exactly 2 ICMP probe
             if test_type == "II" and len(responses) != 2:
-                return None
+                return "None"
         else:
-            return None
+            return "None"
 
         ip_ids = []
         for response in responses:
@@ -115,7 +115,7 @@ class TestMethods:
 
         # Sort the IP ID values
         if not ip_ids:
-            return None
+            return "None"
 
         # Calculate the differences considering wrapping
         differences = [(ip_ids[i + 1] - ip_ids[i]) % 65536 for i in range(len(ip_ids) - 1)]
@@ -145,7 +145,7 @@ class TestMethods:
             return "I"
 
         # 7. If none of the previous steps
-        return None
+        return "None"
 
     def shared_ip_id(self, responses: list[IP], icmp_responses: list[IP]):
         """
@@ -330,12 +330,12 @@ class TestMethods:
         :return: DFI test value ('N', 'S', 'Y', or 'O')
         """
         if len(response) != 2:
-            return None
+            return "None"
         if response[0].haslayer(IP) and response[1].haslayer(IP):
             df1 = (response[0][IP].flags & 0x2) != 0
             df2 = (response[1][IP].flags & 0x2) != 0
         else:
-            return None
+            return "None"
 
         if not df1 and not df2:
             return 'N'
@@ -374,7 +374,7 @@ class TestMethods:
         if response and response.haslayer(IP):
             received_ttl = response[IP].ttl
         else:
-            return None
+            return "None"
 
         # Round up to the nearest value
         if received_ttl <= 32:
@@ -431,7 +431,7 @@ class TestMethods:
             if not response[TCP].flags.URG and response[TCP].urgptr != 0:
                 q_string += "U"
 
-            return q_string or None
+            return q_string or "None"
 
     def sequence_test(self, response: IP, seq_number: int):
         """
@@ -537,7 +537,7 @@ class TestMethods:
         if response.haslayer(ICMP) and response[ICMP].type == 3:
             return response[IP].len - 300
 
-        return None
+        return "None"
 
     def check_icmp_unused_field(self, response: IP):
         """
@@ -556,7 +556,7 @@ class TestMethods:
             if unused_field != b'\x00\x00\x00\x00':
                 print(f"Unused field has non-zero value: {unused_field}")
                 return unused_field
-        return None
+        return "None"
 
     def check_returned_ip_length(self, response: IP):
         """
@@ -577,7 +577,7 @@ class TestMethods:
                 else:
                     return hex(ip_length)  # Return the actual value in hexadecimal format
 
-        return None
+        return "None"
 
     def check_returned_ip_id(self, response: IP):
         """
@@ -597,7 +597,7 @@ class TestMethods:
                 else:
                     return hex(ip_id)  # Return the actual value in hexadecimal format
 
-        return None
+        return "None"
 
     def check_returned_ip_checksum(self, response: IP):
         """
@@ -620,7 +620,7 @@ class TestMethods:
                 else:
                     return "I"  # Invalid
 
-        return None
+        return "None"
 
     def check_returned_udp_checksum(self, response: IP):
         """
@@ -641,7 +641,7 @@ class TestMethods:
                 else:
                     return hex(udp_checksum_received)
 
-        return None
+        return "None"
 
     def check_returned_udp_data_integrity(self, response: IP):
         """
@@ -661,7 +661,7 @@ class TestMethods:
                 else:
                     return "I"  # Invalid
 
-        return None
+        return "None"
 
     def icmp_response_code(self, responses: list[IP]):
         cd_string = ""
@@ -691,4 +691,4 @@ class TestMethods:
             else:
                 cd_string += "O"
 
-        return None
+        return "None"

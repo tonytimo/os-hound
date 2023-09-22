@@ -1,6 +1,6 @@
 import sys
 from os_hound.db_parser import DbParser
-from os_hound.test_methods import TestMethods
+from os_hound.scoring import Scoring
 from os_hound.profile_builder import ProfileBuilder
 from port_scanner import PortScanner
 from probes import Probes
@@ -37,8 +37,10 @@ def main():
         response, probe_type = probes[i]()
         responses[probe_type] = response
 
-    # TestMethods().get_rst_data_checksum(a)
-    ProfileBuilder(responses).build_profile()
+    profile = ProfileBuilder(responses).build_profile()
+    os_dicts = DbParser().parse_db()
+    results = Scoring().score(profile, os_dicts)
+    print(results)
 
 
 if __name__ == "__main__":

@@ -72,6 +72,7 @@ class ProfileBuilder:
         os_dict["T2"]["DF"] = self.methods.check_dont_fragment_bit(self.responses["T2"][0])
         os_dict["T2"]["T"] = self.methods.compute_initial_ttl(self.responses["T2"][0], self.responses["U1"])
         os_dict["T2"]["TG"] = self.methods.ttl_guess_test(self.responses["T2"][0])
+        os_dict["T2"]["W"] = self.methods.extract_tcp_window_size(self.responses["T2"][0])
         os_dict["T2"]["S"] = self.methods.sequence_test(self.responses["T2"][0], self.responses["T2"][1])
         os_dict["T2"]["A"] = self.methods.ack_test(self.responses["T2"][0], self.responses["T2"][1])
         os_dict["T2"]["F"] = self.methods.extract_tcp_flags(self.responses["T2"][0])
@@ -83,6 +84,7 @@ class ProfileBuilder:
         os_dict["T3"]["DF"] = self.methods.check_dont_fragment_bit(self.responses["T3"][0])
         os_dict["T3"]["T"] = self.methods.compute_initial_ttl(self.responses["T3"][0], self.responses["U1"])
         os_dict["T3"]["TG"] = self.methods.ttl_guess_test(self.responses["T3"][0])
+        os_dict["T3"]["W"] = self.methods.extract_tcp_window_size(self.responses["T3"][0])
         os_dict["T3"]["S"] = self.methods.sequence_test(self.responses["T3"][0], self.responses["T3"][1])
         os_dict["T3"]["A"] = self.methods.ack_test(self.responses["T3"][0], self.responses["T3"][1])
         os_dict["T3"]["F"] = self.methods.extract_tcp_flags(self.responses["T3"][0])
@@ -94,6 +96,7 @@ class ProfileBuilder:
         os_dict["T4"]["DF"] = self.methods.check_dont_fragment_bit(self.responses["T4"][0])
         os_dict["T4"]["T"] = self.methods.compute_initial_ttl(self.responses["T4"][0], self.responses["U1"])
         os_dict["T4"]["TG"] = self.methods.ttl_guess_test(self.responses["T4"][0])
+        os_dict["T4"]["W"] = self.methods.extract_tcp_window_size(self.responses["T4"][0])
         os_dict["T4"]["S"] = self.methods.sequence_test(self.responses["T4"][0], self.responses["T4"][1])
         os_dict["T4"]["A"] = self.methods.ack_test(self.responses["T4"][0], self.responses["T4"][1])
         os_dict["T4"]["F"] = self.methods.extract_tcp_flags(self.responses["T4"][0])
@@ -105,6 +108,7 @@ class ProfileBuilder:
         os_dict["T5"]["DF"] = self.methods.check_dont_fragment_bit(self.responses["T5"][0])
         os_dict["T5"]["T"] = self.methods.compute_initial_ttl(self.responses["T5"][0], self.responses["U1"])
         os_dict["T5"]["TG"] = self.methods.ttl_guess_test(self.responses["T5"][0])
+        os_dict["T5"]["W"] = self.methods.extract_tcp_window_size(self.responses["T5"][0])
         os_dict["T5"]["S"] = self.methods.sequence_test(self.responses["T5"][0], self.responses["T5"][1])
         os_dict["T5"]["A"] = self.methods.ack_test(self.responses["T5"][0], self.responses["T5"][1])
         os_dict["T5"]["F"] = self.methods.extract_tcp_flags(self.responses["T5"][0])
@@ -116,6 +120,7 @@ class ProfileBuilder:
         os_dict["T6"]["DF"] = self.methods.check_dont_fragment_bit(self.responses["T6"][0])
         os_dict["T6"]["T"] = self.methods.compute_initial_ttl(self.responses["T6"][0], self.responses["U1"])
         os_dict["T6"]["TG"] = self.methods.ttl_guess_test(self.responses["T6"][0])
+        os_dict["T6"]["W"] = self.methods.extract_tcp_window_size(self.responses["T6"][0])
         os_dict["T6"]["S"] = self.methods.sequence_test(self.responses["T6"][0], self.responses["T6"][1])
         os_dict["T6"]["A"] = self.methods.ack_test(self.responses["T6"][0], self.responses["T6"][1])
         os_dict["T6"]["F"] = self.methods.extract_tcp_flags(self.responses["T6"][0])
@@ -127,6 +132,7 @@ class ProfileBuilder:
         os_dict["T7"]["DF"] = self.methods.check_dont_fragment_bit(self.responses["T7"][0])
         os_dict["T7"]["T"] = self.methods.compute_initial_ttl(self.responses["T7"][0], self.responses["U1"])
         os_dict["T7"]["TG"] = self.methods.ttl_guess_test(self.responses["T7"][0])
+        os_dict["T7"]["W"] = self.methods.extract_tcp_window_size(self.responses["T7"][0])
         os_dict["T7"]["S"] = self.methods.sequence_test(self.responses["T7"][0], self.responses["T7"][1])
         os_dict["T7"]["A"] = self.methods.ack_test(self.responses["T7"][0], self.responses["T7"][1])
         os_dict["T7"]["F"] = self.methods.extract_tcp_flags(self.responses["T7"][0])
@@ -160,5 +166,3 @@ class ProfileBuilder:
         os_dict["IE"]["CD"] = self.methods.icmp_response_code(self.responses["IE"][0])
 
         return os_dict
-
-

@@ -33,8 +33,8 @@ class DbParser:
                 for prop in line_props:
                     props = prop.split("=")
                     if len(props) == 1:
-                        props.append("")
-                    os_dict[filed_names[i]][props[0]] = props
+                        props.append("None")
+                    os_dict[filed_names[i]][props[0]] = props[1]
             os_dicts.append(os_dict)
 
         return os_dicts
