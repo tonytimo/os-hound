@@ -30,11 +30,8 @@ class TestMethods:
                         differences.append(diff)
                     previous_isn = current_isn
 
-        print(f"ISN Differences: {differences}")
-
         if differences:
             gcd_value = HelperFunctions().compute_gcd_list(differences)
-            print(f"GCD of differences: {gcd_value}")
             return differences, gcd_value
         else:
             print("Failed to compute ISN differences.")

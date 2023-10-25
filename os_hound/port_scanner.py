@@ -25,9 +25,8 @@ class PortScanner:
                     # SYN-ACK indicates the port is open
                     if resp[TCP].flags == 'SA':
                         open_ports.append(port)
-                        print(f"port {port} is open.")
                     elif resp[TCP].flags == 'RA':
-                        print(f"port {port} is closed.")
+                        pass
 
             except Exception as e:
                 print(f"port {port} is closed.")

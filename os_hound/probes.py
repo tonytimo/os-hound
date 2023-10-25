@@ -171,8 +171,6 @@ class Probes:
 
         # Checking the response for ICMP port unreachable
         if response and response.haslayer(ICMP) and response[ICMP].type == 3 and response[ICMP].code == 3:
-            print("Received ICMP port unreachable message.")
             return response, probe_type
         else:
-            print("No ICMP port unreachable message received.")
             return None
