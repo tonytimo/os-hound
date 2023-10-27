@@ -1,0 +1,15 @@
+FROM ubuntu:latest
+
+WORKDIR /bin
+
+RUN bash
+
+RUN apt-get update
+
+RUN apt-get install python3 -y
+
+RUN apt-get install net-tools -y
+
+RUN ifconfig -a
+
+CMD ["python3" ,"-m" ,"http.server" ,"80"]

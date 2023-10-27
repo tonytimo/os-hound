@@ -165,4 +165,10 @@ class ProfileBuilder:
         os_dict["IE"]["TG"] = self.methods.ttl_guess_test(self.responses["IE"][0])
         os_dict["IE"]["CD"] = self.methods.icmp_response_code(self.responses["IE"][0])
 
+        # Remove None keys
+        for key in list(os_dict.keys()):
+            for k in list(os_dict[key].keys()):
+                if os_dict[key][k] == "None":
+                    os_dict[key].pop(k)
+
         return os_dict

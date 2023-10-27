@@ -5,11 +5,13 @@ from time import sleep
 
 
 class Probes:
+    """Class for generating, sending probes and collecting the response for OS fingerprinting."""
     def __init__(self, target_ip, open_ports: list):
         self.target_ip = target_ip
         self.open_ports = open_ports
 
     def tcp_syn_probe(self):
+        """Generate and send 6 SYN packets with different TCP options and collect the responses."""
         res_list = []
         probe_type = "SYN"
         open_port = random.choice(self.open_ports)
@@ -49,6 +51,7 @@ class Probes:
         return res_list, probe_type
 
     def icmp_echo_probe(self):
+        """Generate and send 2 ICMP Echo Request packets with different ICMP options and collect the responses."""
         probe_type = "IE"
         # First ICMP Echo Request
         icmp_1 = ICMP(type=8, code=9, id=random.randint(0, 65535), seq=295)  # type=8 means Echo Request
@@ -75,6 +78,7 @@ class Probes:
         return [response1, response2], probe_type
 
     def tcp_ecn_probe(self):
+        """Generate and send a TCP packet with ECN flag set and collect the response."""
         probe_type = "ECN"
         open_port = random.choice(self.open_ports)
 
@@ -103,6 +107,7 @@ class Probes:
         return response, probe_type
 
     def tcp_probe(self, probe_type: str):
+        """Generate and send a TCP packet with the specified probe type ['T2', 'T3', 'T4', 'T5', 'T6', 'T7'] and collect the response."""
         if probe_type not in ['T2', 'T3', 'T4', 'T5', 'T6', 'T7']:
             print("Invalid probe type.")
             return None
@@ -151,6 +156,7 @@ class Probes:
         return response, probe_type, pkt[TCP].seq
 
     def udp_probe(self):
+        """Generate and send a UDP packet with 300 bytes of data and collect the response."""
         probe_type = "U1"
         # Constructing the IP packet
         ip_pkt = IP(dst=self.target_ip, id=0x1042)

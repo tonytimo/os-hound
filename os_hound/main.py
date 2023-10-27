@@ -7,7 +7,8 @@ from profile_builder import ProfileBuilder
 from port_scanner import PortScanner
 from probes import Probes
 
-
+#TODO: Change the most common ports option in the switch to get the dictionary port list
+# and add option of the 1000 first ports
 def main():
     common_ports = {
         7: "Echo",
@@ -79,48 +80,48 @@ __________________________________________/\\\__________________________________
     print("OS Hound is a tool that uses fingerprinting to identify the operating system of a target host.")
 
     # --- Production code ---
-    # try:
-    #     target = questionary.text("Enter the IP address to scan: ").ask()
-    #     match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", target)
-    #     if not target:
-    #         raise ValueError("You've entered an empty string this is an invalid IP address.")
-    #     elif target == 'localhost':
-    #         pass
-    #     elif not bool(match):
-    #         raise ValueError("You've entered an Invalid IP address.")
-    #     scan_type = questionary.select("Select a scan type:", choices=["Most common ports", "All ports", "Port Range"]).ask()
-    #     match scan_type:
-    #         case "Most common ports":
-    #             start = 1
-    #             end = 1024
-    #         case "All ports":
-    #             start = 1
-    #             end = 65535
-    #         case "Port Range":
-    #             start = int(questionary.text("Enter the start port number: ").ask())
-    #             end = int(questionary.text("Enter the end port number: ").ask())
-    #             if start > end or start < 0 or end > 65535:
-    #                 raise ValueError("Invalid port range. Ports should be between 0 and 65535.")
-    #         case _:
-    #             raise ValueError("Invalid scan type.")
-    #
-    # except ValueError as ve:
-    #     print(ve)
-    #     sys.exit(1)
-    # ---------------------
-
-    # --- Testing code ---
     try:
-        target = input("Enter the IP address to scan: ")
-        start = int(input("Enter the start port number: "))
-        end = int(input("Enter the end port number: "))
-
-        if start > end or start < 0 or end > 65535:
-            raise ValueError("Invalid port range. Ports should be between 0 and 65535.")
+        target = questionary.text("Enter the IP address to scan: ").ask()
+        match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", target)
+        if not target:
+            raise ValueError("You've entered an empty string this is an invalid IP address.")
+        elif target == 'localhost':
+            pass
+        elif not bool(match):
+            raise ValueError("You've entered an Invalid IP address.")
+        scan_type = questionary.select("Select a scan type:", choices=["Most common ports", "All ports", "Port Range"]).ask()
+        match scan_type:
+            case "Most common ports":
+                start = 1
+                end = 1024
+            case "All ports":
+                start = 1
+                end = 65535
+            case "Port Range":
+                start = int(questionary.text("Enter the start port number: ").ask())
+                end = int(questionary.text("Enter the end port number: ").ask())
+                if start > end or start < 0 or end > 65535:
+                    raise ValueError("Invalid port range. Ports should be between 0 and 65535.")
+            case _:
+                raise ValueError("Invalid scan type.")
 
     except ValueError as ve:
         print(ve)
         sys.exit(1)
+    # ---------------------
+
+    # --- Testing code ---
+    # try:
+    #     target = input("Enter the IP address to scan: ")
+    #     start = int(input("Enter the start port number: "))
+    #     end = int(input("Enter the end port number: "))
+    #
+    #     if start > end or start < 0 or end > 65535:
+    #         raise ValueError("Invalid port range. Ports should be between 0 and 65535.")
+    #
+    # except ValueError as ve:
+    #     print(ve)
+    #     sys.exit(1)
     # ---------------------
 
     open_ports = PortScanner().syn_scan(target, start, end)

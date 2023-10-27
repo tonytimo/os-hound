@@ -1,6 +1,7 @@
 
-
+# TODO: Add Docstrings
 class Scoring:
+    """Class to score the profile against the database and return the most likely OS."""
     def __init__(self):
         self.scoring_dict ={
             'SEQ': {'SP': 25, 'GCD': 75, 'ISR': 25, 'TI': 100, 'CI': 50, 'II': 100,'SS': 80, 'TS': 100},
@@ -19,9 +20,10 @@ class Scoring:
         }
 
     def score(self, profile: dict, os_dicts: list[dict]):
-        """Score the profile against the database and return the most likely OS."""
+        """Score the profile against the  all database and return the best match OS."""
         filed_names = ["SEQ", "OPS", "WIN", "ECN", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "U1", "IE"]
         best_matches = []
+        temp_list = []
         for os_dict in os_dicts:
             score = 0
             for field in filed_names:
@@ -45,6 +47,11 @@ class Scoring:
                                                 score += self.__check_score(field, key)
                                                 break
                                             continue
+                                        elif ">" in t:
+                                            temp_2 = t.strip(">")
+                                            if profile[field][key] > int(temp_2, 16):
+                                                score += self.__check_score(field, key)
+                                                break
                                         elif profile[field][key] == int(t, 16):
                                             score += self.__check_score(field, key)
                                             break
@@ -72,6 +79,8 @@ class Scoring:
                 elif score > best_matches[0][1]:
                     best_matches.clear()
                     best_matches.append((os_dict, score))
+
+            temp_list.append((os_dict, score))
 
         return best_matches
 

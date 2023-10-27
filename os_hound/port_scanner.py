@@ -2,7 +2,8 @@ from scapy.volatile import RandShort
 from scapy.sendrecv import *
 from scapy.layers.inet import IP, TCP
 
-
+# TODO: Add scan that gets a list of ports as an argument and scans them all
+# TODO: Add Docstrings
 class PortScanner:
     def __init__(self):
         pass

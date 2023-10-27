@@ -6,10 +6,12 @@ class DbParser:
         pass
 
     def parse_db(self):
-        """Parse the database file and return a dictionary of OS fingerprints."""
+        """Parse the database file and return a dictionaries of OS fingerprints."""
         filed_names = ["SEQ", "OPS", "WIN", "ECN", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "U1", "IE"]
         os_dicts = []
+        # opening the database file
         db_file = open("./nmap-db.txt", encoding="utf8").read()
+        # parsing the database file
         db_os_list = db_file.split("\n\n")
         db_os_list.pop(0)
         db_os_list.pop(0)
