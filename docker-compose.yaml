@@ -1,13 +1,27 @@
 version: '3.8'
 
 services:
-  ubuntu:
+  webapp:
     build:
       context: .
       dockerfile: ./Dockerfile2
+    networks:
+      inetrnal:
+        ipv4_address: 10.5.0.2
 
 
-  test:
+  oshound:
     build:
       context: .
       dockerfile: ./Dockerfile
+    tty: true
+    networks:
+      inetrnal:
+
+networks:
+  inetrnal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1

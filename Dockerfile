@@ -1,13 +1,16 @@
-FROM python:3.11-alpine
+FROM python:3.11-slim-bookworm AS base
+WORKDIR /app
 
-RUN mkdir -p /home/app
+ADD requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /home/app
 
-WORKDIR /home/app
+FROM python:3.11-slim-bookworm AS runtime
+COPY --from=base /usr/local/lib/python3.11 /usr/local/lib/python3.11
 
-RUN pip install poetry
+WORKDIR /app
+COPY os_hound /app/os_hound
+COPY nmap-db.txt /app/nmap-db.txt
 
-RUN poetry install
+ENTRYPOINT ["/bin/bash"]
 
-CMD ["tail", "-f", "/dev/null"]

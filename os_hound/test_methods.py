@@ -1,6 +1,6 @@
 import zlib
 from helper import HelperFunctions
-from scapy.layers.inet import IP, TCP, ICMP, UDP, IPerror, UDPerror
+from scapy.layers.inet import IP, TCP, ICMP, IPerror, UDPerror
 import math
 import statistics
 

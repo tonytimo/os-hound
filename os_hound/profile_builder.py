@@ -12,6 +12,7 @@ class ProfileBuilder:
     def build_profile(self):
         """
         Build the OS profile based on the responses from the probes.
+
         :return: returns a dictionary containing the OS profile
         """
         os_dict = {"SEQ": {}, "OPS": {}, "WIN": {}, "ECN": {}, "T1": {}, "T2": {}, "T3": {}, "T4": {}, "T5": {}, "T6": {}, "T7": {}, "U1": {}, "IE": {}}
