@@ -1,8 +1,6 @@
 from test_methods import TestMethods
 from scapy.layers.inet import TCP
 
-# TODO: Add docstrings and check the docs of every method to see if all conditions are met
-
 
 class ProfileBuilder:
     def __init__(self, responses: dict):
@@ -11,7 +9,8 @@ class ProfileBuilder:
 
     def build_profile(self):
         """
-        Build the OS profile based on the responses from the probes.
+        Build the OS profile by using all the test methods
+        based on the responses from all the probes sent.
 
         :return: returns a dictionary containing the OS profile
         """

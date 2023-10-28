@@ -1,17 +1,38 @@
 import zlib
-from helper import HelperFunctions
 from scapy.layers.inet import IP, TCP, ICMP, IPerror, UDPerror
 import math
 import statistics
 
 
-#TODO: make sure all tests doc string includes the test type in the DB
 class TestMethods:
     def __init__(self):
         pass
 
+    def __compute_gcd(self, a, b):
+        """
+        Compute the greatest common divisor of a and b.
+        :param a: First number.
+        :param b: Second number.
+        :return: greatest common divisor of a and b value.
+        """
+        while b:
+            a, b = b, a % b
+        return abs(a)
+
+    def __compute_gcd_list(self, numbers):
+        """
+        Compute the GCD of a list of numbers by using the __compute_gcd method.
+        :param numbers: List of numbers.
+        :return: GCD value.
+        """
+        gcd_value = numbers[0]
+        for number in numbers[1:]:
+            gcd_value = self.__compute_gcd(gcd_value, number)
+        return gcd_value
+
     def tcp_isn_gcd(self, responses: list[IP]):
         """
+        The GCD test.
         Calculate the differences between each of the two consecutive sequences in the give responses and
         compute the GCD value of the differences.
 
@@ -32,7 +53,7 @@ class TestMethods:
                     previous_isn = current_isn
 
         if differences:
-            gcd_value = HelperFunctions().compute_gcd_list(differences)
+            gcd_value = self.__compute_gcd_list(differences)
             return differences, gcd_value
         else:
             print("Failed to compute ISN differences.")
@@ -41,6 +62,7 @@ class TestMethods:
 
     def tcp_isn_isr(self, diff: list[int]):
         """
+        The ISR test.
         Calculate the ISR based on the given diff array and the time_intervals.
 
         :param diff: List of differences between each two consecutive probe responses.
@@ -65,6 +87,7 @@ class TestMethods:
 
     def tcp_isn_sp(self, seq_rates: list[int], gcd_value: int):
         """
+        The SP test.
         Calculate the SP value based on the given seq_rates and the GCD value.
 
         :param seq_rates: List of rate of ISN counter increases per 0.1 seconds.
@@ -91,6 +114,7 @@ class TestMethods:
 
     def ip_id_sequence(self, responses: list[IP], test_type: str):
         """
+        The TI, CI, II tests.
         Calculate the IP ID sequence type based on the given ip_ids and the test type.
 
         :param responses: List of responses from the tcp_syn_probe or icmp_echo_probe.
@@ -158,6 +182,7 @@ class TestMethods:
 
     def shared_ip_id(self, responses: list[IP], icmp_responses: list[IP]):
         """
+        The SS test.
         Calculate the Shared IP ID sequence Boolean (SS).
 
         :param responses: List of TCP SYN response objects from the tcp_syn_probe.
@@ -191,6 +216,7 @@ class TestMethods:
 
     def calculate_ts(self, responses: list[IP]):
         """
+        The TS test.
         Calculate the TCP timestamp option algorithm (TS).
 
         :param responses: List of TCP response objects containing the 'timestamp' field.
@@ -230,6 +256,7 @@ class TestMethods:
 
     def extract_tcp_options(self, responses: list[IP] | IP):
         """
+        The O test.
         Extract TCP options from the given responses.
 
         :param responses: List of TCP response objects from tcp_syn_probe.
@@ -283,6 +310,7 @@ class TestMethods:
 
     def extract_tcp_window_size(self, responses: list[IP] | IP):
         """
+        The W test.
         Extract the TCP window size from the packet.
 
         :param responses: List of TCP response objects from tcp_syn_probe.
@@ -305,6 +333,7 @@ class TestMethods:
 
     def check_responsiveness(self, probe_type: str, response: IP, has_closed_tcp_port: bool = True):
         """
+        The R test.
         Checks the responsiveness of a target to a given probe.
 
         :param probe_type: The type of the probe. e.g. 'IE', 'U1', 'T5', etc.
@@ -330,6 +359,7 @@ class TestMethods:
 
     def check_dont_fragment_bit(self, response: IP):
         """
+        The DF test.
         Checks if the 'don't fragment' bit in the IP header of a packet is set.
 
         Args:
@@ -349,6 +379,7 @@ class TestMethods:
 
     def dfi_test_value(self, response: list[IP]):
         """
+        The DFI test.
         Determine the DFI test value based on the DF bits of the two ICMP echo request probe responses.
 
         :param response: List of ICMP echo request probe responses.
@@ -376,6 +407,7 @@ class TestMethods:
 
     def compute_initial_ttl(self, response: IP, u1_response):
         """
+        The T test.
         Compute the initial TTL of the target's response.
 
         :param response: A response object from the tcp_probe, icmp_echo_probe, tcp_ecn_probe, udp_probe.
@@ -396,6 +428,7 @@ class TestMethods:
 
     def ttl_guess_test(self, response: IP):
         """
+        The TG test.
         Determine the TTL guess test value based on the TTL value of the target's response.
 
         :param response: A response object from the tcp_probe, icmp_echo_probe, tcp_ecn_probe, udp_probe.
@@ -421,6 +454,7 @@ class TestMethods:
 
     def congestion_control_test(self, response: IP):
         """
+        The CC test.
         Extract the ECN-related flags from the TCP layer of the packet and determine
         the CC value.
 
@@ -448,6 +482,7 @@ class TestMethods:
 
     def check_tcp_quirks(self, response: IP):
         """
+        The Q test.
         Extract the TCP quirks from the TCP layer of the packet.
         :param response: Response object from the tcp_probe or tcp_ecn_probe.
         :return: returns a string of TCP quirks and if no quirks are found returns none.
@@ -467,6 +502,7 @@ class TestMethods:
 
     def sequence_test(self, response: IP, seq_number: int):
         """
+        The S test.
         Determine the S test value based on the sequence number and the ack number of the response.
 
         :param response: Response object from the tcp_probe.
@@ -491,6 +527,7 @@ class TestMethods:
 
     def ack_test(self, response: IP, seq_number: int):
         """
+        The A test.
         Determine the A test value based on the sequence number and the ack number of the response.
 
         :param response: Response object from the tcp_probe.
@@ -515,6 +552,7 @@ class TestMethods:
 
     def extract_tcp_flags(self, response: IP):
         """
+        The F test.
         Extract the TCP flags from the TCP layer of the response.
 
         :param response: response object from the tcp_probe.
@@ -546,6 +584,7 @@ class TestMethods:
 
     def get_rst_data_checksum(self, response: IP):
         """
+        The RD test.
         Checks if a given response is a TCP RST response with data.
         If data is present, computes and returns its CRC32 checksum.
         Otherwise, returns zero.
@@ -566,6 +605,7 @@ class TestMethods:
 
     def get_ip_total_length(self, response: IP):
         """
+        The IPL test.
         Extracts the total length of an IP response if it's a port unreachable
         response elicited by the U1 test.
 
@@ -584,6 +624,7 @@ class TestMethods:
 
     def check_icmp_unused_field(self, response: IP):
         """
+        The UN test.
         Checks if the ICMP unused field is non-zero.
 
         :param response: response object of the udp_probe.
@@ -605,6 +646,7 @@ class TestMethods:
 
     def check_returned_ip_length(self, response: IP):
         """
+        The RIPL test.
         Checks if the total length of the embedded IP response is 328 bytes.
 
         :param response: response object of the udp_probe.
@@ -627,6 +669,7 @@ class TestMethods:
 
     def check_returned_ip_id(self, response: IP):
         """
+        The RID test.
         Checks if the ID of the embedded IP response is 0x1042.
         :param response: response object of the udp_probe.
         :return: returns 'G' if the ID is 0x1042; the actual value otherwise.
@@ -648,6 +691,7 @@ class TestMethods:
 
     def check_returned_ip_checksum(self, response: IP):
         """
+        The RIPCK test.
         Checks if the checksum of the embedded IP response is valid.
         :param response:  response object of the udp_probe.
         :return: returns 'G' if the checksum is valid; 'Z' if it's zero; 'I' if it's invalid; None otherwise.
@@ -672,6 +716,7 @@ class TestMethods:
 
     def check_returned_udp_checksum(self, response: IP):
         """
+        The RUCK test.
         Checks if the checksum of the embedded UDP response is valid.
         :param response: response object of the udp_probe.
         :return: returns 'G' if the checksum is valid; the actual value otherwise.
@@ -694,6 +739,7 @@ class TestMethods:
 
     def check_returned_udp_data_integrity(self, response: IP):
         """
+        The RUD test.
         Checks if the data of the embedded UDP response is intact.
         :param response: response object of the udp_probe.
         :return: returns 'G' if the data is intact; 'I' if it's invalid; None otherwise.
@@ -714,6 +760,12 @@ class TestMethods:
             return "None"
 
     def icmp_response_code(self, responses: list[IP]):
+        """
+        The CD test.
+        Determine the CD test value based on the ICMP response code.
+        :param responses: List of ICMP response objects.
+        :return: CD test value ('Z', 'S', 'NN', or 'O').
+        """
         if responses:
             cd_string = ""
             sent_probe_code1 = 9

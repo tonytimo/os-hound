@@ -6,7 +6,11 @@ class DbParser:
         pass
 
     def parse_db(self):
-        """Parse the database file and return a dictionaries of OS fingerprints."""
+        """
+        Parse the database file and
+        return a list of all dictionaries of OS fingerprints.
+        :return: list of dictionaries
+        """
         filed_names = ["SEQ", "OPS", "WIN", "ECN", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "U1", "IE"]
         os_dicts = []
         # opening the database file

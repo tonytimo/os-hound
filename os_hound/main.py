@@ -1,14 +1,14 @@
 import sys
 import re
 import questionary
+from tabulate import tabulate
 from db_parser import DbParser
 from scoring import Scoring
 from profile_builder import ProfileBuilder
 from port_scanner import PortScanner
 from probes import Probes
 
-#TODO: Change the most common ports option in the switch to get the dictionary port list
-# and add option of the 1000 first ports
+
 def main():
     common_ports = {
         7: "Echo",
@@ -81,6 +81,9 @@ __________________________________________/\\\__________________________________
 
     # --- Production code ---
     try:
+        common_ports_list = None
+        start = None
+        end = None
         target = questionary.text("Enter the IP address to scan: ").ask()
         match = re.match(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", target)
         if not target:
@@ -89,11 +92,16 @@ __________________________________________/\\\__________________________________
             pass
         elif not bool(match):
             raise ValueError("You've entered an Invalid IP address.")
-        scan_type = questionary.select("Select a scan type:", choices=["Most common ports", "All ports", "Port Range"]).ask()
+        scan_type = questionary.select("Select a scan type:", choices=["Most common ports", "Port Range", "1000 first ports","All ports"]).ask()
         match scan_type:
-            case "Most common ports":
+            case "1000 first ports":
                 start = 1
                 end = 1024
+            case "Most common ports":
+                common_ports_list = list(common_ports.keys())
+                ans = questionary.select("Do you want to know what are the most common ports?", choices=["Yes", "No"]).ask()
+                if ans == "Yes":
+                    print(tabulate(common_ports.items(), headers=["Port", "Service"], tablefmt="grid"))
             case "All ports":
                 start = 1
                 end = 65535
@@ -124,11 +132,9 @@ __________________________________________/\\\__________________________________
     #     sys.exit(1)
     # ---------------------
 
-    open_ports = PortScanner().syn_scan(target, start, end)
+    open_ports = PortScanner().syn_scan(target, start, end, common_ports_list)
 
-    if open_ports:
-        print(f"Open ports on {target}: {', '.join(map(str, open_ports))}")
-    else:
+    if not open_ports:
         print(f"No open ports found on {target} between ports {start} and {end}.")
 
     p = Probes(target, open_ports)
@@ -146,12 +152,17 @@ __________________________________________/\\\__________________________________
     os_dicts = DbParser().parse_db()
     results = Scoring().score(profile, os_dicts)
     print("Open Ports: ")
-    print("Port  |  Service")
+    col_names = ["Port", "Service"]
+    data = []
     for k in open_ports:
         if k in common_ports.keys():
-            print(f"{k}        {common_ports.get(k)}")
+            data.append((k, common_ports.get(k)))
         else:
-            print(f"{k}        not common")
+            data.append((k, "not common"))
+
+    print("\n")
+    print(tabulate(data, headers=col_names, tablefmt="grid"))
+    print("\n")
     print(f"The OS Prediction is:\n {results[0][0]['os_title']}")
 
 

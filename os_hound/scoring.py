@@ -48,7 +48,7 @@ class Scoring:
                                     score += self.__check_score(field, key)
                             # INTEGER
                             elif isinstance(profile[field][key], int):
-                                # Checking for symbols in the current value
+                                # Checking for unconventional symbols in the current value
                                 if "|" in os_dict[field][key]:
                                     temp = os_dict[field][key].split("|")
                                     for t in temp:
@@ -94,4 +94,10 @@ class Scoring:
         return best_matches
 
     def __check_score(self, field: str, key: str):
+        """
+        Return the score of the current field and key.
+        :param field: first dictionary key.
+        :param key: second dictionary key.
+        :return: The score of the current field and key.
+        """
         return self.scoring_dict[field][key]
