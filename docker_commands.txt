@@ -1,0 +1,15 @@
+# build the docker image
+docker-compose up --build -d
+
+# run the docker image
+docker-compose up -d
+
+# stop the docker image
+docker-compose down
+
+# change requirments.txt
+poetry export -o .\requirements.txt --without-hashes
+docker-compose up --build -d
+
+# run oshound in IDE
+docker compose exec -it oshound bash
