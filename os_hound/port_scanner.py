@@ -21,20 +21,29 @@ class PortScanner:
         open_ports = []
         if not ports_list and start_port and end_port:
             for port in range(start_port, end_port + 1):
-                open_ports = self.__scan(target_ip, port, open_ports)
+                res = None
+                res = self.__scan(target_ip, port)
+                if res:
+                    open_ports.append(port)
+                else:
+                    pass
 
         else:
             for port in ports_list:
-                open_ports = self.__scan(target_ip, port, open_ports)
+                res = None
+                res = self.__scan(target_ip, port)
+                if res:
+                    open_ports.append(port)
+                else:
+                    pass
 
         return open_ports
 
-    def __scan(self, target_ip, port: int, open_ports: list):
+    def __scan(self, target_ip, port: int):
         """
         Scan a single port.
         :param target_ip: The target IP address.
         :param port: The port to scan.
-        :param open_ports: The list of open ports.
         :return: The list of open ports.
         """
         # Use a random source port for each scan
@@ -50,11 +59,9 @@ class PortScanner:
             if resp:
                 # SYN-ACK indicates the port is open
                 if resp[TCP].flags == 'SA':
-                    open_ports.append(port)
+                    return port
                 elif resp[TCP].flags == 'RA':
                     pass
-
-            return open_ports
 
         except Exception:
             print(f"port {port} is closed.")

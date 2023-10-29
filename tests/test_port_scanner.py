@@ -1,44 +1,41 @@
 import pytest
-from scapy.layers.inet import TCP
+from unittest.mock import patch
 from os_hound.port_scanner import PortScanner
 
 
-# Mocked responses
-class MockedResponse:
-    def __init__(self, flags):
-        self.flags = flags
+class TestPortScanner:
+
+    # Mocking the __scan method
+    @patch.object(PortScanner, '_PortScanner__scan')
+    def test_syn_scan_with_port_range(self, mock_scan):
+        scanner = PortScanner()
+
+        # Setting mock responses
+        mock_scan.side_effect = lambda ip, port: port if port == 80 else None
+
+        result = scanner.syn_scan("192.168.1.1", start_port=79, end_port=81)
+        assert result == [80]
+
+    @patch.object(PortScanner, '_PortScanner__scan')
+    def test_syn_scan_with_port_list(self, mock_scan):
+        scanner = PortScanner()
+
+        # Setting mock responses for ports 22 and 80
+        mock_scan.side_effect = lambda ip, port: port if port in [22, 80] else None
+
+        result = scanner.syn_scan("192.168.1.1", ports_list=[21, 22, 23, 80, 81])
+        assert result == [22, 80]
+
+    @patch.object(PortScanner, '_PortScanner__scan')
+    def test_syn_scan_with_no_open_ports(self, mock_scan):
+        scanner = PortScanner()
+
+        # Setting mock to always return None (no open ports)
+        mock_scan.return_value = None
+
+        result = scanner.syn_scan("192.168.1.1", start_port=1000, end_port=1005)
+        assert result == []
 
 
-SYN_ACK = MockedResponse('SA')
-RST_ACK = MockedResponse('RA')
-NO_RESP = None
-
-
-def mock_sr1(packet, *args, **kwargs):
-    target_port = packet[TCP].dport
-
-    # Simulated responses based on target ports
-    responses = {
-        22: SYN_ACK,   # Mock port 22 as open
-        80: RST_ACK,   # Mock port 80 as closed
-        443: NO_RESP  # Mock port 443 as no response
-    }
-    flags = responses[target_port]
-
-    return {TCP: flags}
-
-
-
-def test_syn_scan(monkeypatch):
-    # Using monkeypatch to replace the sr1 function
-    monkeypatch.setattr("os_hound.port_scanner.sr1", mock_sr1)
-
-    target_ip = "127.0.0.1"
-    start_port = 80
-    end_port = 100
-
-    result = PortScanner().syn_scan(target_ip, start_port, end_port)
-
-    assert 22 in result
-    assert 80 not in result
-    assert 443 not in result
+if __name__ == '__main__':
+    pytest.main()
