@@ -1,8 +1,9 @@
 import pytest
+import unittest
 from os_hound.db_parser import DbParser
 
 
-class TestDbParser:
+class TestDbParser(unittest.TestCase):
     def test_parse_db(self):
         # Act
         parser = DbParser()

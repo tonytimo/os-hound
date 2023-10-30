@@ -339,10 +339,11 @@ class TestMethods:
         :param probe_type: The type of the probe. e.g. 'IE', 'U1', 'T5', etc.
         :param response:response was received for the probe.
         :param has_closed_tcp_port: Default is True. Indicates if there's a closed TCP port for a target.
-
-        Returns:
-        :returns 'Y' if the target responded, 'N' otherwise.
+        :return: 'Y' if the target responded, 'N' otherwise.
         """
+        if probe_type not in ['IE', 'U1', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'ECN']:
+            print("Invalid probe type.")
+            raise ValueError
 
         # If no response is received
         if response is None:
@@ -362,11 +363,8 @@ class TestMethods:
         The DF test.
         Checks if the 'don't fragment' bit in the IP header of a packet is set.
 
-        Args:
         :param response: A representation of the IP packet. Assumes the packet has a key 'DF' indicating the state of the 'don't fragment' bit.
-
-        Returns:
-        :returns: 'Y' if the 'don't fragment' bit is set, 'N' otherwise.
+        :return: 'Y' if the 'don't fragment' bit is set, 'N' otherwise.
         """
         if response:
             if response.haslayer(IP):  # Check if packet has an IP layer
@@ -522,6 +520,8 @@ class TestMethods:
                     return 'A+'
                 else:
                     return 'O'
+            else:
+                return "None"
         else:
             return "None"
 
@@ -547,6 +547,8 @@ class TestMethods:
                     return 'S+'
                 else:
                     return 'O'
+            else:
+                return "None"
         else:
             return "None"
 
@@ -579,6 +581,8 @@ class TestMethods:
 
                 # Return the set flags as a string
                 return ''.join(set_flags)
+            else:
+                return "None"
         else:
             return "None"
 
@@ -600,6 +604,8 @@ class TestMethods:
                     return zlib.crc32(data)
                 else:
                     return 0
+            else:
+                return "None"
         else:
             return "None"
 
@@ -664,6 +670,10 @@ class TestMethods:
                         return "G"  # Good
                     else:
                         return hex(ip_length)  # Return the actual value in hexadecimal format
+                else:
+                    return "None"
+            else:
+                return "None"
         else:
             return "None"
 
@@ -686,6 +696,10 @@ class TestMethods:
                         return "G"  # Good
                     else:
                         return hex(ip_id)  # Return the actual value in hexadecimal format
+                else:
+                    return "None"
+            else:
+                return "None"
         else:
             return "None"
 
@@ -711,6 +725,10 @@ class TestMethods:
                         return "Z"  # Zero
                     else:
                         return "I"  # Invalid
+                else:
+                    return "None"
+            else:
+                return "None"
         else:
             return "None"
 
@@ -734,6 +752,10 @@ class TestMethods:
                         return "G"  # Good
                     else:
                         return hex(udp_checksum_received)
+                else:
+                    return "None"
+            else:
+                return "None"
         else:
             return "None"
 
@@ -756,6 +778,10 @@ class TestMethods:
                         return "G"  # Good
                     else:
                         return "I"  # Invalid
+                else:
+                    return "None"
+            else:
+                return "None"
         else:
             return "None"
 

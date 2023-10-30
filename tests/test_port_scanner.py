@@ -1,9 +1,10 @@
 import pytest
+import unittest
 from unittest.mock import patch
 from os_hound.port_scanner import PortScanner
 
 
-class TestPortScanner:
+class TestPortScanner(unittest.TestCase):
 
     # Mocking the __scan method
     @patch.object(PortScanner, '_PortScanner__scan')

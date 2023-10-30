@@ -2,9 +2,6 @@ import unittest
 from scapy.layers.inet import IP, ICMP
 import pytest
 from unittest.mock import patch
-
-import scapy.sendrecv
-
 from os_hound.probes import Probes
 
 
