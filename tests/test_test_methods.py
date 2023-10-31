@@ -14,7 +14,9 @@ class TestTestMethods(unittest.TestCase):
     def setUp(cls):
         cls.instance = TestMethods()
 
+    # ----------------------------
     # GCD Test
+    # ----------------------------
     def test_tcp_isn_gcd_empty_list(self):
         # Act
         result = self.instance.tcp_isn_gcd([])
@@ -43,7 +45,9 @@ class TestTestMethods(unittest.TestCase):
         assert differences == [400]
         assert gcd_value == 400
 
+    # ----------------------------
     # ISR Test
+    # ----------------------------
     def test_tcp_isn_isr_valid_diff(self):
         # Arrange
         diff = [5, 10, 15]
@@ -68,7 +72,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # SP Test
+    # ----------------------------
     def test_tcp_isn_sp_gcd_less_than_nine(self):
         # Arrange
         seq_rates = [10, 20, 30]
@@ -115,7 +121,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # TI,CI,II Test
+    # ----------------------------
     def test_ip_id_sequence_all_zero(self):
         # Arrange
         responses = [IP(id=0)/TCP(), IP(id=0)/TCP(), IP(id=0)/TCP()]
@@ -204,7 +212,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # SS Test
+    # ----------------------------
     def test_shared_ip_id_shared_sequence(self):
         # Arrange
         tcp_responses = [IP(id=1), IP(id=4), IP(id=7)]
@@ -260,7 +270,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # TS Test
+    # ----------------------------
     def test_calculate_ts_unsupported_values(self):
         # Arrange
         response1 = IP()/TCP()
@@ -368,7 +380,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # O Test
+    # ----------------------------
     def test_extract_tcp_options_single_response(self):
         # Arrange
         options = [("MSS", 1460), ("Timestamp", (1, 1)), ("SAckOK", ''), ("NOP", None)]
@@ -404,7 +418,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # W Test
+    # ----------------------------
     def test_extract_tcp_window_size_single_response(self):
         # Arrange
         response = IP()/TCP(window=8192)
@@ -437,7 +453,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # R Test
+    # ----------------------------
     def test_ie_no_response(self):
         assert self.instance.check_responsiveness("IE", None, True) == ""
 
@@ -465,7 +483,9 @@ class TestTestMethods(unittest.TestCase):
     def test_t5_with_response(self):
         assert self.instance.check_responsiveness("T5", IP(), True) == "Y"
 
+    # ----------------------------
     # DF Test
+    # ----------------------------
     def test_df_bit_set(self):
         # Arrange
         packet = IP(flags="DF")
@@ -493,7 +513,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # DFI Test
+    # ----------------------------
     def test_dfi_no_response(self):
         # Act
         result = self.instance.dfi_test_value(None)
@@ -551,7 +573,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "O"
 
+    # ----------------------------
     # T Test
+    # ----------------------------
     def test_compute_initial_ttl(self):
         # Arrange
         response = IP(ttl=50)
@@ -576,7 +600,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # TG Test
+    # ----------------------------
     def test_ttl_guess_test_32(self):
         # Arrange
         response = IP(ttl=20)  # Example TTL <= 32
@@ -627,7 +653,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # CC Test
+    # ----------------------------
     def test_congestion_control_Y(self):
         # Arrange
         packet = IP()/TCP(flags='E')  # Setting only ECE flag
@@ -678,7 +706,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # Q Test
+    # ----------------------------
     def test_tcp_quirks_R(self):
         # Arrange
         packet = IP()/TCP(reserved=1)  # Set the reserved field non-zero
@@ -719,7 +749,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == ""
 
+    # ----------------------------
     # S Test
+    # ----------------------------
     def test_sequence_Z(self):
         # Arrange
         packet = IP()/TCP(ack=12345)
@@ -781,7 +813,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # A Test
+    # ----------------------------
     def test_ack_Z(self):
         # Arrange
         seq_number = 12345  # Arbitrary sequence number
@@ -853,7 +887,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # F Test
+    # ----------------------------
     def test_extract_flags_all(self):
         # Arrange
         packet = IP()/TCP(flags="EUAPRSF")  # All flags set
@@ -901,7 +937,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # RD Test
+    # ----------------------------
     def test_rst_with_data(self):
         # Arrange
         packet = IP()/TCP(flags="R")/Raw(load="test_data")
@@ -959,7 +997,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # IPL Test
+    # ----------------------------
     def test_icmp_port_unreachable(self):
         # Arrange
         packet = IP(len=320)/ICMP(type=3)  # ICMP type 3 is "port unreachable"
@@ -997,7 +1037,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # UN Test
+    # ----------------------------
     def test_icmp_type_3_non_zero_unused_field(self):
         # Arrange
         unused_value = b'\x01\x02\x03\x04'
@@ -1049,7 +1091,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # RIPL Test
+    # ----------------------------
     def test_check_returned_ip_length_good_value(self):
         # Arrange
         icmp_payload = ICMP(type=3) / IPerror(src="1.1.1.1", dst="2.2.2.2", len=0x148) / ICMP()  # This should make the length 328 bytes (0x148)
@@ -1082,7 +1126,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # RID Test
+    # ----------------------------
     def test_check_returned_ip_id_good_value(self):
         # Arrange
         icmp_payload = ICMP(type=3) / IPerror(src="1.1.1.1", dst="2.2.2.2", id=0x1042) / ICMP()
@@ -1125,7 +1171,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # RIPCK Test
+    # ----------------------------
     def test_check_returned_ip_checksum_good(self):
         # Arrange
         embedded_ip = IPerror(src="1.1.1.1", dst="2.2.2.2", chksum=0x1234)
@@ -1182,7 +1230,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # RUCK Test
+    # ----------------------------
     def test_check_returned_udp_checksum_good(self):
         # Arrange
         embedded_udp = UDPerror(sport=12345, dport=80, chksum=None)
@@ -1227,7 +1277,9 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # RUD Test
+    # ----------------------------
     def test_check_returned_udp_data_integrity_good(self):
         # Arrange
         data = b'CCCC'  # Some example payload
@@ -1286,9 +1338,10 @@ class TestTestMethods(unittest.TestCase):
         # Assert
         assert result == "None"
 
+    # ----------------------------
     # CD Test
-    # TODO: end the cd test and check the results also make the test titles more pronounceable!!!
-    def test_icmp_response_code_ZZ(self):
+    # ----------------------------
+    def test_icmp_response_code_Z(self):
         # Arrange
         responses = [IP() / ICMP(type=0, code=0), IP() / ICMP(type=0, code=0)]
 
@@ -1296,29 +1349,39 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.icmp_response_code(responses)
 
         # Assert
-        assert result == "ZZ"
+        assert result == "Z"
 
-    def test_icmp_response_code_ZO(self):
+    def test_icmp_response_code_S(self):
         # Arrange
-        responses = [IP() / ICMP(type=0, code=0), IP() / ICMP(type=0, code=1)]
+        responses = [IP() / ICMP(type=0, code=9), IP() / ICMP(type=0, code=0)]
 
         # Act
         result = self.instance.icmp_response_code(responses)
 
         # Assert
-        assert result == "ZO"
+        assert result == "S"
 
     # Continue this pattern for other combinations...
 
     def test_icmp_response_code_NN_format(self):
         # Arrange
-        responses = [IP() / ICMP(type=0, code=5), IP() / ICMP(type=0, code=10)]
+        responses = [IP() / ICMP(type=0, code=15), IP() / ICMP(type=0, code=15)]
 
         # Act
         result = self.instance.icmp_response_code(responses)
 
         # Assert
-        assert result == "0510"
+        assert result == "F"
+
+    def test_icmp_response_code_O(self):
+        # Arrange
+        responses = [IP() / ICMP(type=0, code=15), IP() / ICMP(type=0, code=6)]
+
+        # Act
+        result = self.instance.icmp_response_code(responses)
+
+        # Assert
+        assert result == "O"
 
     def test_icmp_response_code_none(self):
         # Arrange

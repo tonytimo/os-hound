@@ -790,34 +790,29 @@ class TestMethods:
         The CD test.
         Determine the CD test value based on the ICMP response code.
         :param responses: List of ICMP response objects.
-        :return: CD test value ('Z', 'S', 'NN', or 'O').
+        :return: CD test value ('Z', 'S', hex value of the first packet code in hexadecimal in the <NN> notation,
+         or 'O').
         """
         if responses:
             cd_string = ""
             sent_probe_code1 = 9
             sent_probe_code2 = 0
-
             # Checking if the responses is ICMP echo reply
             if responses[0].haslayer(ICMP) and responses[0][ICMP].type == 0 and responses[1].haslayer(ICMP) and responses[1][ICMP].type == 0:
                 code_value1 = responses[0][ICMP].code
                 code_value2 = responses[1][ICMP].code
 
-                if sent_probe_code1 == 0 and code_value1 == 0:
+                if code_value1 == 0 and code_value2 == 0:
                     cd_string += "Z"
-                elif sent_probe_code1 == code_value1:
+                elif code_value1 == sent_probe_code1 and code_value2 == sent_probe_code2:
                     cd_string += "S"
-                elif code_value1 != 0:
-                    cd_string += f"{code_value1:02}"  # NN format
+                elif code_value1 == code_value2 and code_value1 != 0:
+                    cd_string += f"{code_value1:X}"  # NN format
                 else:
                     cd_string += "O"
-
-                if sent_probe_code2 == 0 and code_value2 == 0:
-                    cd_string += "Z"
-                elif sent_probe_code2 == code_value2:
-                    cd_string += "S"
-                elif code_value2 != 0:
-                    cd_string += f"{code_value2:02}"  # NN format
-                else:
-                    cd_string += "O"
+            else:
+                return "None"
         else:
             return "None"
+
+        return cd_string
