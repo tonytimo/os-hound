@@ -341,7 +341,7 @@ class TestMethods:
         :param has_closed_tcp_port: Default is True. Indicates if there's a closed TCP port for a target.
         :return: 'Y' if the target responded, 'N' otherwise.
         """
-        if probe_type not in ['IE', 'U1', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'ECN']:
+        if probe_type not in ['IE', 'U1', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'ECN', 'SYN']:
             print("Invalid probe type.")
             raise ValueError
 
