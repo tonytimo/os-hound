@@ -1,6 +1,7 @@
 from scapy.volatile import RandShort
 from scapy.sendrecv import *
 from scapy.layers.inet import IP, TCP
+import concurrent.futures
 
 
 class PortScanner:
@@ -18,24 +19,39 @@ class PortScanner:
         :param ports_list: A list of ports to scan.
         :return: A list of open ports.
         """
+        # MULTITHREADING CODE
         open_ports = []
         if not ports_list and start_port and end_port:
-            for port in range(start_port, end_port + 1):
-                res = None
-                res = self.__scan(target_ip, port)
-                if res:
-                    open_ports.append(port)
-                else:
-                    pass
+            ports_list = list(range(start_port, end_port + 1))
 
-        else:
-            for port in ports_list:
-                res = None
-                res = self.__scan(target_ip, port)
-                if res:
-                    open_ports.append(port)
-                else:
-                    pass
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            res = [executor.submit(self.__scan, target_ip, port) for port in ports_list]
+
+        for port in concurrent.futures.as_completed(res):
+            if port.result():
+                open_ports.append(port.result())
+            else:
+                pass
+
+        # SYNCHRONOUS CODE
+        # open_ports = []
+        # if not ports_list and start_port and end_port:
+        #     for port in range(start_port, end_port + 1):
+        #         res = None
+        #         res = self.__scan(target_ip, port)
+        #         if res:
+        #             open_ports.append(port)
+        #         else:
+        #             pass
+        #
+        # else:
+        #     for port in ports_list:
+        #         res = None
+        #         res = self.__scan(target_ip, port)
+        #         if res:
+        #             open_ports.append(port)
+        #         else:
+        #             pass
 
         return open_ports
 
@@ -61,7 +77,7 @@ class PortScanner:
                 if resp[TCP].flags == 'SA':
                     return port
                 elif resp[TCP].flags == 'RA':
-                    pass
+                    return None
 
         except Exception:
             print(f"port {port} is closed.")
