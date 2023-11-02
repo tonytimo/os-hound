@@ -1,34 +1,31 @@
 import zlib
-from scapy.layers.inet import IP, TCP, ICMP, IPerror, UDPerror
+from scapy.layers.inet import IP, TCP, ICMP, IPerror, UDPerror, UDP
 import math
 import statistics
+from math import gcd
+from functools import reduce
 
 
 class TestMethods:
     def __init__(self):
         pass
 
-    def __compute_gcd(self, a, b):
-        """
-        Compute the greatest common divisor of a and b.
-        :param a: First number.
-        :param b: Second number.
-        :return: greatest common divisor of a and b value.
-        """
-        while b:
-            a, b = b, a % b
-        return abs(a)
+    # Calculate the differences between consecutive ISN values considering 32-bit wrapping
+    def __calculate_difference(self, a, b):
+        # Convert to unsigned 32-bit integers
+        a = a & 0xFFFFFFFF
+        b = b & 0xFFFFFFFF
 
-    def __compute_gcd_list(self, numbers):
-        """
-        Compute the GCD of a list of numbers by using the __compute_gcd method.
-        :param numbers: List of numbers.
-        :return: GCD value.
-        """
-        gcd_value = numbers[0]
-        for number in numbers[1:]:
-            gcd_value = self.__compute_gcd(gcd_value, number)
-        return gcd_value
+        # Calculate minimum difference considering the modular arithmetic space
+        return min((a - b) & 0xFFFFFFFF, (b - a) & 0xFFFFFFFF)
+
+    def __timeval_subtract(self, a, b):
+        # Convert both timedeltas to microseconds
+        a_microseconds = a * 1000000
+        b_microseconds = b * 1000000
+
+        # Subtract and return the difference in microseconds
+        return int(a_microseconds - b_microseconds)
 
     def tcp_isn_gcd(self, responses: list[IP]):
         """
@@ -39,38 +36,39 @@ class TestMethods:
         :param responses: List of SYN ACK responses from the tcp_syn_probe.
         :return: GCD value and the differences array
         """
-        differences = []
-        previous_isn = None
+        isns = []
+        times = []
         if isinstance(responses, list):
             for response in responses:
                 if response and response.haslayer(TCP):
-                    current_isn = response[TCP].seq
-                    if previous_isn is not None:
-                        diff = current_isn - previous_isn
-                        # Adjust for wrapping of 32-bit counter
-                        diff = min(diff, 0x100000000 - diff)
-                        differences.append(diff)
-                    previous_isn = current_isn
+                    isns.append(response[TCP].seq)
+                    times.append(response[IP].time)
 
-        if differences:
-            gcd_value = self.__compute_gcd_list(differences)
-            return differences, gcd_value
-        else:
-            print("Failed to compute ISN differences.")
+        # Create an array of differences
+        diff1 = [self.__calculate_difference(isns[i + 1], isns[i]) for i in range(len(isns) - 1)]
+        # diff2 = [self.__timeval_subtract(times[i + 1], times[i]) for i in range(len(times) - 1)]
+        diff2 =[]
 
-        return "None"
+        # Calculate the GCD of the differences
+        isn_gcd = reduce(gcd, diff1)
 
-    def tcp_isn_isr(self, diff: list[int]):
+        return diff1, diff2, isn_gcd
+
+    def tcp_isn_isr(self, diff1: list[int], diff2: list[int]):
         """
         The ISR test.
         Calculate the ISR based on the given diff array and the time_intervals.
 
-        :param diff: List of differences between each two consecutive probe responses.
+        :param diff1: List of seq differences between each two consecutive probe responses.
+        :param diff2: List of time differences between each two consecutive probe responses.
         :return: ISR value
         """
-        if diff:
-            # Calculate the rate of ISN counter increases per second for each diff1 value
-            seq_rates = [diff / 0.1 for diff in diff]
+        if diff1:
+            # for i in range(len(diff1)):
+            #     diff1[i] = diff1[i] * 1000000
+            # # Calculate the rate of ISN counter increases per second for each diff1 value
+            # seq_rates = [diff / time for diff, time in zip(diff1, diff2) if time > 0]
+            seq_rates = [diff / 0.000012 for diff in diff1]
 
             # Calculate the average rate
             avg_rate = sum(seq_rates) / len(seq_rates)
@@ -79,13 +77,13 @@ class TestMethods:
             if avg_rate < 1:
                 isr = 0
             else:
-                isr = round(8 * math.log2(avg_rate))
+                isr = round(8 * math.log2(avg_rate) + 0.5)
 
             return isr, seq_rates
         else:
             return "None"
 
-    def tcp_isn_sp(self, seq_rates: list[int], gcd_value: int):
+    def tcp_isn_sp(self, seq_rates: list[float], gcd_value: int) -> int:
         """
         The SP test.
         Calculate the SP value based on the given seq_rates and the GCD value.
@@ -94,23 +92,25 @@ class TestMethods:
         :param gcd_value: GCD value calculated from the diff.
         :return: SP value
         """
-        if seq_rates and gcd_value:
-            # If GCD value is greater than 9, divide the seq_rates by that value
-            if gcd_value > 9:
-                seq_rates = [rate / gcd_value for rate in seq_rates]
+        if len(seq_rates) < 4:
+            raise ValueError("At least four responses are required to calculate SP.")
 
-            # Compute the standard deviation of the seq_rates
-            std_dev = statistics.stdev(seq_rates)
+        # Optionally divide by the GCD if it is greater than 9
+        if gcd_value > 9:
+            seq_rates = [rate / gcd_value for rate in seq_rates]
 
-            # Calculate SP based on the standard deviation
-            if std_dev <= 1:
-                sp = 0
-            else:
-                sp = round(8 * math.log2(std_dev))
+        # Calculate the standard deviation of seq_rates
+        avg_rate = sum(seq_rates) / len(seq_rates)
+        variance = sum((rate - avg_rate) ** 2 for rate in seq_rates) / (len(seq_rates) - 1)
+        stddev = math.sqrt(variance)
 
-            return sp
+        # Calculate SP
+        if stddev <= 1:
+            sp = 0
         else:
-            return "None"
+            sp = round(math.log(stddev, 2) * 8)
+
+        return sp
 
     def ip_id_sequence(self, responses: list[IP], test_type: str):
         """
@@ -160,7 +160,7 @@ class TestMethods:
 
             # 3. If all the IP IDs are identical
             if len(set(ip_ids)) == 1:
-                return hex(ip_ids[0])
+                return ip_ids[0]
 
             # 4. Differences exceed 1,000 and not evenly divisible by 256
             if any((diff > 1000 and diff % 256 != 0) or (diff % 256 == 0 and diff >= 256000) for diff in differences):
@@ -229,13 +229,15 @@ class TestMethods:
             for response in responses:
                 tssents.append(response.time)
                 if response and response.haslayer(TCP):
-                    tsvals.append(response[TCP].time)
+                    for option in response[TCP].options:
+                        if option[0] == "Timestamp":
+                            tsvals.append(option[1][0])
 
             # Check for unsupported or zero values
             if None in tsvals:
                 return "U"
             if any(val == 0 for val in tsvals):
-                return "0"
+                return 0
 
             # Compute average increments per second
             increments = [(tsvals[i + 1] - tsvals[i]) / (tssents[i + 1] - tssents[i]) for i in range(len(tsvals) - 1)]
@@ -243,13 +245,13 @@ class TestMethods:
 
             # Assign TS value based on avg_increment
             if 0 <= avg_increment <= 5.66:
-                return "1"
+                return 1
             elif 70 <= avg_increment <= 150:
-                return "7"
+                return 2
             elif 150 <= avg_increment <= 350:
-                return "8"
+                return 8
             else:
-                return str(round(math.log(avg_increment, 2)))
+                return round(math.log(avg_increment, 2))
 
         else:
             return "None"
@@ -282,7 +284,7 @@ class TestMethods:
                                 if option[0] == "SAckOK" and option[1] == b'':
                                     continue
                                 if option[0] == "MSS":
-                                    options_string += str(hex(option[1]))[2:]
+                                    options_string += str(hex(option[1]))[2:].upper()
                                     continue
                                 options_string += str(option[1])
                     res_list.append(options_string)
@@ -298,10 +300,10 @@ class TestMethods:
                             options_string += "1" if option[1][1] != 0 else "0"
                             continue
                         if option[1] is not None:
-                            if option[0] == "SAckOK" and option[1] == "":
+                            if option[0] == "SAckOK" and option[1] == b'':
                                 continue
                             if option[0] == "MSS":
-                                options_string += str(hex(option[1]))[:2]
+                                options_string += str(hex(option[1]))[2:].upper()
                                 continue
                             options_string += str(option[1])
                 return options_string
@@ -414,11 +416,11 @@ class TestMethods:
         """
         if response and u1_response:
             # Determine hop count
-            if u1_response.haslayer(IP) and u1_response.haslayer(ICMP):
-                hop_count = u1_response[IP].ttl - u1_response[ICMP].ttl
+            if u1_response.haslayer(IP) and u1_response.haslayer(IPerror):
+                hop_count = u1_response[IP].ttl - u1_response[IPerror].ttl
 
                 # Compute initial TTL of the target's response
-                initial_ttl = response[IP].ttl + hop_count
+                initial_ttl = 64 + hop_count
 
                 return initial_ttl
         else:
@@ -498,18 +500,19 @@ class TestMethods:
 
         return q_string
 
-    def sequence_test(self, response: IP, seq_number: int):
+    def sequence_test(self, response: IP, original_pkt: IP):
         """
         The S test.
         Determine the S test value based on the sequence number and the ack number of the response.
 
         :param response: Response object from the tcp_probe.
-        :param seq_number: the original sequence number of the probe.
+        :param original_pkt: Original packet sent by the tcp_probe.
         :return: returns the S test value ('Z', 'A', 'A+', 'O')
         """
-        if response:
-            if response.haslayer(TCP):
-                ack_number = response[TCP].ack
+        if response and original_pkt:
+            if response.haslayer(TCP) and original_pkt.haslayer(TCP):
+                ack_number = original_pkt[TCP].ack
+                seq_number = response[TCP].seq
 
                 # Check conditions and determine the S test value
                 if seq_number == 0:
@@ -525,18 +528,19 @@ class TestMethods:
         else:
             return "None"
 
-    def ack_test(self, response: IP, seq_number: int):
+    def ack_test(self, response: IP, original_pkt: IP):
         """
         The A test.
         Determine the A test value based on the sequence number and the ack number of the response.
 
+        :param original_pkt: Original packet sent by the tcp_probe.
         :param response: Response object from the tcp_probe.
-        :param seq_number: the original sequence number of the probe.
         :return: returns the S test value ('Z', 'S', 'S+', or 'O').
         """
-        if response and seq_number:
+        if response:
             if response.haslayer(TCP):
                 ack_number = response[TCP].ack
+                seq_number = original_pkt[TCP].seq
 
                 # Check conditions and determine the S test value
                 if ack_number == 0:
@@ -624,7 +628,7 @@ class TestMethods:
         if response:
             # Check if the response is an ICMP "port unreachable" response
             if response.haslayer(ICMP) and response[ICMP].type == 3:
-                return response[IP].len - 300
+                return response[IP].len
         else:
             return "None"
 
@@ -647,6 +651,10 @@ class TestMethods:
                 if unused_field != b'\x00\x00\x00\x00':
                     print(f"Unused field has non-zero value: {unused_field}")
                     return unused_field
+                else:
+                    return 0
+            else:
+                return "None"
         else:
             return "None"
 
@@ -669,7 +677,7 @@ class TestMethods:
                     if ip_length == 0x148:
                         return "G"  # Good
                     else:
-                        return hex(ip_length)  # Return the actual value in hexadecimal format
+                        return ip_length  # Return the actual value in hexadecimal format
                 else:
                     return "None"
             else:
@@ -695,7 +703,7 @@ class TestMethods:
                     if ip_id == 0x1042:
                         return "G"  # Good
                     else:
-                        return hex(ip_id)  # Return the actual value in hexadecimal format
+                        return ip_id  # Return the actual value in hexadecimal format
                 else:
                     return "None"
             else:
@@ -732,7 +740,7 @@ class TestMethods:
         else:
             return "None"
 
-    def check_returned_udp_checksum(self, response: IP):
+    def check_returned_udp_checksum(self, response: IP, original_pkt: IP):
         """
         The RUCK test.
         Checks if the checksum of the embedded UDP response is valid.
@@ -740,18 +748,17 @@ class TestMethods:
         :return: returns 'G' if the checksum is valid; the actual value otherwise.
         """
         if response:
-            original_udp_checksum = None
             # Check if the response is an ICMP port unreachable error
             if response.haslayer(ICMP) and response[ICMP].type == 3:
                 # Check if the response has the embedded original UDP layer (UDPerror in Scapy terms)
                 if response.haslayer(UDPerror):
                     udp_checksum_received = response[UDPerror].chksum
-
+                    original_udp_checksum = original_pkt[UDP].chksum
                     # Compare and determine value
                     if udp_checksum_received == original_udp_checksum:
                         return "G"  # Good
                     else:
-                        return hex(udp_checksum_received)
+                        return udp_checksum_received
                 else:
                     return "None"
             else:

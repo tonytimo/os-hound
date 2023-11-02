@@ -48,7 +48,7 @@ class Probes:
                 res_list.append(response)
             sleep(0.1)
 
-        return res_list, probe_type
+        return res_list, probe_type, pkt_list
 
     def icmp_echo_probe(self):
         """Generate and send 2 ICMP Echo Request packets with different ICMP options and collect the responses."""
@@ -75,7 +75,7 @@ class Probes:
         # Send the second ICMP request
         response2 = sr1(pkt2, timeout=1, verbose=0)
 
-        return [response1, response2], probe_type
+        return [response1, response2], probe_type , [pkt1, pkt2]
 
     def tcp_ecn_probe(self):
         """Generate and send a TCP packet with ECN flag set and collect the response."""
@@ -104,7 +104,7 @@ class Probes:
         # Send the packet
         response = sr1(pkt, timeout=1, verbose=0)
 
-        return response, probe_type
+        return response, probe_type, pkt
 
     def tcp_probe(self, probe_type: str):
         """Generate and send a TCP packet with the specified probe type ['T2', 'T3', 'T4', 'T5', 'T6', 'T7'] and collect the response."""
@@ -113,6 +113,9 @@ class Probes:
             return None
 
         open_port = random.choice(self.open_ports)
+        closed_port = (random.randint(0, 65535))
+        while closed_port in self.open_ports:
+            closed_port = random.randint(0, 65535)
 
         # Common TCP options for T2-T7 except T7's window scale
         tcp_options = [('WScale', 10), ('NOP', None), ('MSS', 265), ('Timestamp', (0xFFFFFFFF, 0)), ('SAckOK', '')]
@@ -133,15 +136,15 @@ class Probes:
             ip_pkt.flags = 'DF'  # Setting IP DF bit
 
         elif probe_type == 'T5':
-            tcp_pkt = TCP(sport=random.randint(1024, 65535), dport=open_port, window=31337, flags='S', options=tcp_options)
+            tcp_pkt = TCP(sport=random.randint(1024, 65535), dport=closed_port, window=31337, flags='S', options=tcp_options)
 
         elif probe_type == 'T6':
-            tcp_pkt = TCP(sport=random.randint(1024, 65535), dport=open_port, window=32768, flags='A', options=tcp_options)
+            tcp_pkt = TCP(sport=random.randint(1024, 65535), dport=closed_port, window=32768, flags='A', options=tcp_options)
             ip_pkt.flags = 'DF'  # Setting IP DF bit
 
         elif probe_type == 'T7':
             tcp_options[0] = ('WScale', 15)  # Changing the window scale for T7
-            tcp_pkt = TCP(sport=random.randint(1024, 65535), dport=open_port, window=65535, flags='FPU', options=tcp_options)
+            tcp_pkt = TCP(sport=random.randint(1024, 65535), dport=closed_port, window=65535, flags='FPU', options=tcp_options)
 
         else:
             print("Invalid probe type.")
@@ -153,7 +156,7 @@ class Probes:
         # Send the packet
         response = sr1(pkt, timeout=1, verbose=0)
 
-        return response, probe_type, pkt[TCP].seq
+        return response, probe_type, pkt
 
     def udp_probe(self):
         """Generate and send a UDP packet with 300 bytes of data and collect the response."""
@@ -167,7 +170,7 @@ class Probes:
             target_port = random.randint(0, 65535)
 
         # Constructing the UDP packet with 'C' repeated 300 times as data
-        udp_pkt = UDP(sport=random.randint(1024, 65535), dport=target_port) / ("C" * 300)
+        udp_pkt = UDP(sport=random.randint(1024, 65535), dport=target_port, chksum=0) / ('C' * 300)
 
         # Combine IP and UDP to create the full packet
         pkt = ip_pkt / udp_pkt
@@ -177,6 +180,6 @@ class Probes:
 
         # Checking the response for ICMP port unreachable
         if response and response.haslayer(ICMP) and response[ICMP].type == 3 and response[ICMP].code == 3:
-            return response, probe_type
+            return response, probe_type, pkt
         else:
             return None

@@ -7,12 +7,12 @@ class Scoring:
             'WIN': {'W1': 15, 'W2': 15, 'W3': 15, 'W4': 15, 'W5': 15, 'W6': 15},
             'ECN': {'R': 100, 'DF': 20, 'T': 15, 'TG': 15, 'W': 15, 'O': 15, 'CC': 100, 'Q': 20},
             'T1': {'R': 100, 'DF': 20, 'T': 15, 'TG': 15, 'S': 20, 'A': 20, 'F': 30, 'RD': 20, 'Q': 20},
-            'T2': {'R': 80, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 0, 'Q': 20},
-            'T3': {'R': 80, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 0, 'Q': 20},
-            'T4': {'R': 100, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 0, 'Q': 20},
-            'T5': {'R': 100, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 0, 'Q': 20},
-            'T6': {'R': 100, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 0, 'Q': 20},
-            'T7': {'R': 80, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 0, 'Q': 20},
+            'T2': {'R': 80, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 20, 'Q': 20},
+            'T3': {'R': 80, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 20, 'Q': 20},
+            'T4': {'R': 100, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 20, 'Q': 20},
+            'T5': {'R': 100, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 20, 'Q': 20},
+            'T6': {'R': 100, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 20, 'Q': 20},
+            'T7': {'R': 80, 'DF': 20, 'T': 15, 'TG': 15, 'W': 25, 'S': 20, 'A': 20, 'F': 30, 'O': 10, 'RD': 20, 'Q': 20},
             'U1': {'R': 50, 'DF': 20, 'T': 15, 'TG': 15, 'IPL': 100, 'UN': 100, 'RIPL': 100, 'RID': 100, 'RIPCK': 100, 'RUCK': 100, 'RUD': 100},
             'IE': {'R': 50, 'DFI': 40, 'T': 15, 'TG': 15, 'CD': 100}
         }
@@ -72,12 +72,14 @@ class Scoring:
                                         score += self.__check_score(field, key)
                                 elif ">" in os_dict[field][key]:
                                     temp = os_dict[field][key].lstrip(">")
-                                    if profile[field][key] > int(temp[1], 16):
+                                    if profile[field][key] > int(temp, 16):
                                         score += self.__check_score(field, key)
                                 elif "<" in os_dict[field][key]:
                                     temp = os_dict[field][key].lstrip("<")
-                                    if profile[field][key] < int(temp[1], 16):
+                                    if profile[field][key] < int(temp, 16):
                                         score += self.__check_score(field, key)
+                                elif os_dict[field][key] in ['G', 'U', 'I', 'BI', 'RI', 'RD', 'Z']:
+                                    break
                                 elif profile[field][key] == int(os_dict[field][key], 16):
                                     score += self.__check_score(field, key)
                             else:

@@ -5,6 +5,7 @@ class DbParser:
     def __init__(self):
         pass
 
+# TODO: make sure to process the os title
     def parse_db(self):
         """
         Parse the database file and

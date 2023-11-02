@@ -136,17 +136,20 @@ _______________________________________/\\\_____________________________________
 
     if not open_ports:
         print(f"No open ports found on {target} between ports {start} and {end}.")
+        raise SystemExit
 
     p = Probes(target, open_ports)
     probes = [p.tcp_syn_probe, p.icmp_echo_probe, p.tcp_ecn_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.udp_probe]
     responses = {}
     for i in range(0, len(probes)):
         if probes[i] == p.tcp_probe:
-            response, probe_type, seq = probes[i](f'T{i-1}')
-            responses[probe_type] = [response, seq]
+            response, probe_type, original_pkt = probes[i](f'T{i-1}')
+            responses[probe_type] = [response, original_pkt]
             continue
-        response, probe_type = probes[i]()
-        responses[probe_type] = response
+        else:
+            response, probe_type, original_pkt = probes[i]()
+            responses[probe_type] = [response, original_pkt]
+            continue
 
     profile = ProfileBuilder(responses).build_profile()
     os_dicts = DbParser().parse_db()
