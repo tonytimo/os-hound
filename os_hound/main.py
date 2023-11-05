@@ -123,6 +123,18 @@ _______________________________________/\\\_____________________________________
         print(f"No open ports found on {target} between ports {start} and {end}.")
         raise SystemExit
 
+    print("Open Ports: ")
+    col_names = ["Port", "Service"]
+    data = []
+    for k in open_ports:
+        if k in common_ports.keys():
+            data.append((k, common_ports.get(k)))
+        else:
+            data.append((k, "not common"))
+
+    print(tabulate(data, headers=col_names, tablefmt="grid"))
+    print("\n")
+
     p = Probes(target, open_ports)
     probes = [p.tcp_syn_probe, p.icmp_echo_probe, p.tcp_ecn_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.tcp_probe, p.udp_probe]
     responses = {}
@@ -139,19 +151,13 @@ _______________________________________/\\\_____________________________________
     profile = ProfileBuilder(responses).build_profile()
     os_dicts = DbParser().parse_db()
     results = Scoring().score(profile, os_dicts)
-    print("Open Ports: ")
-    col_names = ["Port", "Service"]
-    data = []
-    for k in open_ports:
-        if k in common_ports.keys():
-            data.append((k, common_ports.get(k)))
-        else:
-            data.append((k, "not common"))
-
-    print("\n")
-    print(tabulate(data, headers=col_names, tablefmt="grid"))
-    print("\n")
-    print(f"The OS Prediction is:\n {results[0][0]['os_title']}")
+    print(f"The OS Prediction is: {results[0][0]['os_title']}")
+    print(f"The OS Information: {results[0][0]['os_info']}")
+    if results[0][0]['os_description'] != "":
+        print(f"The OS description: {results[0][0]['os_description']}")
+        print("\n")
+    if results[0][0]['os_cpe'] != "":
+        print(f"The OS CPE: {results[0][0]['os_cpe']}")
 
 
 if __name__ == "__main__":
