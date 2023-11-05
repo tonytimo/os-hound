@@ -17,7 +17,7 @@ class TestProbes(unittest.TestCase):
         # Mock the response from sr1
         mock_sr1.return_value = 'fake_response'
 
-        responses, probe_type = self.probes.tcp_syn_probe()
+        responses, probe_type, original_pkt = self.probes.tcp_syn_probe()
 
         # There are 6 SYN packets sent, so we should get 6 responses
         self.assertEqual(len(responses), 6)
@@ -27,7 +27,7 @@ class TestProbes(unittest.TestCase):
     def test_icmp_echo_probe(self, mock_sr1):
         mock_sr1.return_value = 'fake_response'
 
-        responses, probe_type = self.probes.icmp_echo_probe()
+        responses, probe_type, original_pkt = self.probes.icmp_echo_probe()
 
         self.assertEqual(len(responses), 2)
         self.assertEqual(probe_type, "IE")
@@ -36,7 +36,7 @@ class TestProbes(unittest.TestCase):
     def test_tcp_ecn_probe(self, mock_sr1):
         mock_sr1.return_value = 'fake_response'
 
-        response, probe_type = self.probes.tcp_ecn_probe()
+        response, probe_type, original_pkt = self.probes.tcp_ecn_probe()
 
         self.assertEqual(response, 'fake_response')
         self.assertEqual(probe_type, "ECN")
@@ -56,7 +56,7 @@ class TestProbes(unittest.TestCase):
         mock_sr1.return_value = IP(src="192.168.0.1") / ICMP(type=3, code=3)
 
         # Act
-        response, probe = self.probes.udp_probe()
+        response, probe, original_pkt = self.probes.udp_probe()
 
         # Assert
         self.assertEqual(probe, "U1")

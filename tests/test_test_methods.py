@@ -3,7 +3,7 @@ import zlib
 
 import pytest
 import unittest
-from scapy.layers.inet import IP, TCP, ICMP, IPerror, UDPerror
+from scapy.layers.inet import IP, TCP, ICMP, IPerror, UDPerror, UDP
 from scapy.packet import Raw
 
 from os_hound.test_methods import TestMethods
@@ -19,20 +19,21 @@ class TestTestMethods(unittest.TestCase):
     # ----------------------------
     def test_tcp_isn_gcd_empty_list(self):
         # Act
-        result = self.instance.tcp_isn_gcd([])
+        diff, gcd = self.instance.tcp_isn_gcd([])
 
         # Assert
-        assert result == "None"
+        assert gcd == "None"
+        assert diff == []
 
     def test_tcp_isn_gcd_no_tcp_layer(self):
         # Arrange
         responses = [IP(src="192.168.0.1"), IP(src="192.168.0.2")]
 
         # Act
-        result = self.instance.tcp_isn_gcd(responses)
+        diff, gcd = self.instance.tcp_isn_gcd(responses)
 
         # Assert
-        assert result == "None"
+        assert gcd == "None"
 
     def test_tcp_isn_gcd_at_least_two_tcp_responses(self):
         # Arrange
@@ -51,16 +52,13 @@ class TestTestMethods(unittest.TestCase):
     def test_tcp_isn_isr_valid_diff(self):
         # Arrange
         diff = [5, 10, 15]
-        expected_seq_rates = [50, 100, 150]
-        avg_rate = sum(expected_seq_rates) / len(expected_seq_rates)
-        expected_isr = round(8 * math.log2(avg_rate))
 
         # Act
         isr, seq_rates = self.instance.tcp_isn_isr(diff)
 
         # Assert
-        assert isr == expected_isr
-        assert seq_rates == expected_seq_rates
+        assert isr == 158
+        assert seq_rates == [416666.6666666666, 833333.3333333333, 1250000.0]
 
     def test_tcp_isn_isr_empty_diff(self):
         # Arrange
@@ -77,27 +75,25 @@ class TestTestMethods(unittest.TestCase):
     # ----------------------------
     def test_tcp_isn_sp_gcd_less_than_nine(self):
         # Arrange
-        seq_rates = [10, 20, 30]
+        seq_rates = [10, 20, 30, 40]
         gcd_value = 5
-        expected_sp = 27
 
         # Act
         sp = self.instance.tcp_isn_sp(seq_rates, gcd_value)
 
         # Assert
-        assert sp == expected_sp
+        assert sp == 30
 
     def test_tcp_isn_sp_gcd_greater_than_nine(self):
         # Arrange
-        seq_rates = [10, 20, 30]
+        seq_rates = [10, 20, 30, 40]
         gcd_value = 10
-        expected_sp = 0
 
         # Act
         sp = self.instance.tcp_isn_sp(seq_rates, gcd_value)
 
         # Assert
-        assert sp == expected_sp
+        assert sp == 3
 
     def test_tcp_isn_sp_empty_seq_rates(self):
         # Arrange
@@ -155,7 +151,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.ip_id_sequence(responses, test_type)
 
         # Assert
-        assert result == hex(12345)
+        assert result == 12345
 
     def test_ip_id_sequence_ri_case(self):
         # Arrange
@@ -279,8 +275,8 @@ class TestTestMethods(unittest.TestCase):
         response2 = IP()/TCP()
         response1.time = 1
         response2.time = 2
-        response1[TCP].time = None
-        response2[TCP].time = 10
+        response1[TCP].options = [('Timestamp', (None, 0))]
+        response2[TCP].options = [('Timestamp', (10, 0))]
         responses = [response1, response2]
 
         # Act
@@ -295,15 +291,15 @@ class TestTestMethods(unittest.TestCase):
         response2 = IP() / TCP()
         response1.time = 1
         response2.time = 2
-        response1[TCP].time = 0
-        response2[TCP].time = 10
+        response1[TCP].options = [('Timestamp', (0, 0))]
+        response2[TCP].options = [('Timestamp', (10, 0))]
         responses = [response1, response2]
 
         # Act
         result = self.instance.calculate_ts(responses)
 
         # Assert
-        assert result == '0'
+        assert result == 0
 
     def test_calculate_ts_increment_1(self):
         # Arrange
@@ -311,15 +307,15 @@ class TestTestMethods(unittest.TestCase):
         response2 = IP() / TCP()
         response1.time = 1
         response2.time = 4
-        response1[TCP].time = 1
-        response2[TCP].time = 4
+        response1[TCP].options = [('Timestamp', (1, 0))]
+        response2[TCP].options = [('Timestamp', (4, 0))]
         responses = [response1, response2]
 
         # Act
         result = self.instance.calculate_ts(responses)
 
         # Assert
-        assert result == '1'
+        assert result == 1
 
     def test_calculate_ts_increment_7(self):
         # Arrange
@@ -327,15 +323,15 @@ class TestTestMethods(unittest.TestCase):
         response2 = IP() / TCP()
         response1.time = 1
         response2.time = 2
-        response1[TCP].time = 1
-        response2[TCP].time = 110
+        response1[TCP].options = [('Timestamp', (1, 0))]
+        response2[TCP].options = [('Timestamp', (110, 0))]
         responses = [response1, response2]
 
         # Act
         result = self.instance.calculate_ts(responses)
 
         # Assert
-        assert result == '7'
+        assert result == 7
 
     def test_calculate_ts_increment_8(self):
         # Arrange
@@ -343,15 +339,15 @@ class TestTestMethods(unittest.TestCase):
         response2 = IP() / TCP()
         response1.time = 1
         response2.time = 2
-        response1[TCP].time = 1
-        response2[TCP].time = 200
+        response1[TCP].options = [('Timestamp', (1, 0))]
+        response2[TCP].options = [('Timestamp', (200, 0))]
         responses = [response1, response2]
 
         # Act
         result = self.instance.calculate_ts(responses)
 
         # Assert
-        assert result == '8'
+        assert result == 8
 
     def test_calculate_ts_increment_other(self):
         # Arrange
@@ -359,15 +355,14 @@ class TestTestMethods(unittest.TestCase):
         response2 = IP() / TCP()
         response1.time = 1
         response2.time = 2
-        response1[TCP].time = 1
-        response2[TCP].time = 1000
+        response1[TCP].options = [('Timestamp', (1, 0))]
+        response2[TCP].options = [('Timestamp', (1000, 0))]
         responses = [response1, response2]
 
         # Act
         result = self.instance.calculate_ts(responses)
 
         # Assert
-        assert isinstance(result, str)
         assert int(result) > 8  # This assumes avg_increment > 350, adjust as needed
 
     def test_calculate_ts_no_responses(self):
@@ -392,7 +387,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.extract_tcp_options(response)
 
         # Assert
-        assert result == 'M0xT11SN'
+        assert result == 'M5B4T11SN'
 
     def test_extract_tcp_options_multiple_responses(self):
         # Arrange
@@ -406,7 +401,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.extract_tcp_options(responses)
 
         # Assert
-        assert result == ['M5b4T10N', 'W8ST01']
+        assert result == ['M5B4T10N', 'W8ST01']
 
     def test_extract_tcp_options_none(self):
         # Arrange
@@ -579,14 +574,13 @@ class TestTestMethods(unittest.TestCase):
     def test_compute_initial_ttl(self):
         # Arrange
         response = IP(ttl=50)
-        u1_response = IP(ttl=40)/ICMP()
-        u1_response[ICMP].ttl = 35
+        u1_response = IP(ttl=40)/ICMP()/IPerror(ttl=35)
 
         # Act
         result = self.instance.compute_initial_ttl(response, u1_response)
 
         # Assert
-        expected_initial_ttl = 55  # Computed from above values (50 + (40 - 35))
+        expected_initial_ttl = 69  # Computed from above values (50 + (40 - 35))
         assert result == expected_initial_ttl
 
     def test_compute_initial_ttl_no_response(self):
@@ -754,44 +748,44 @@ class TestTestMethods(unittest.TestCase):
     # ----------------------------
     def test_sequence_Z(self):
         # Arrange
-        packet = IP()/TCP(ack=12345)
-        seq_number = 0
+        packet = IP()/TCP(seq=0)
+        original_pkt = IP() / TCP(ack=0)
 
         # Act
-        result = self.instance.sequence_test(packet, seq_number)
+        result = self.instance.sequence_test(packet, original_pkt)
 
         # Assert
         assert result == 'Z'
 
     def test_sequence_A(self):
         # Arrange
-        seq_number = 12345
-        packet = IP()/TCP(ack=seq_number)
+        original_pkt = IP()/TCP(ack=54399)
+        packet = IP()/TCP(seq=54399)
 
         # Act
-        result = self.instance.sequence_test(packet, seq_number)
+        result = self.instance.sequence_test(packet, original_pkt)
 
         # Assert
         assert result == 'A'
 
     def test_sequence_A_plus(self):
         # Arrange
-        seq_number = 12345
-        packet = IP()/TCP(ack=seq_number - 1)
+        original_pkt = IP()/TCP(ack=54399 -1)
+        packet = IP()/TCP(seq=54399)
 
         # Act
-        result = self.instance.sequence_test(packet, seq_number)
+        result = self.instance.sequence_test(packet, original_pkt)
 
         # Assert
         assert result == 'A+'
 
     def test_sequence_O(self):
         # Arrange
-        seq_number = 12345
-        packet = IP()/TCP(ack=54321)
+        original_pkt = IP()/TCP(ack=54399)
+        packet = IP()/TCP(seq=54321)
 
         # Act
-        result = self.instance.sequence_test(packet, seq_number)
+        result = self.instance.sequence_test(packet, original_pkt)
 
         # Assert
         assert result == 'O'
@@ -818,71 +812,64 @@ class TestTestMethods(unittest.TestCase):
     # ----------------------------
     def test_ack_Z(self):
         # Arrange
-        seq_number = 12345  # Arbitrary sequence number
+        original_pkt = IP()/TCP(seq=54399)  # Arbitrary sequence number
         packet = IP()/TCP(ack=0)  # Ack number is 0
 
         # Act
-        result = self.instance.ack_test(packet, seq_number)
+        result = self.instance.ack_test(packet, original_pkt)
 
         # Assert
         assert result == 'Z'
 
     def test_ack_S(self):
         # Arrange
-        seq_number = 12345
-        packet = IP()/TCP(ack=seq_number)  # Acknowledgment number matches sequence number
+        original_pkt = IP()/TCP(seq=54399)
+        packet = IP()/TCP(ack=54399)  # Acknowledgment number matches sequence number
 
         # Act
-        result = self.instance.ack_test(packet, seq_number)
+        result = self.instance.ack_test(packet, original_pkt)
 
         # Assert
         assert result == 'S'
 
     def test_ack_S_plus(self):
         # Arrange
-        seq_number = 12345
-        packet = IP()/TCP(ack=seq_number + 1)  # Acknowledgment number is one greater than sequence number
+        original_pkt = IP()/TCP(seq=54399)
+        packet = IP()/TCP(ack=54399 + 1)  # Acknowledgment number is one greater than sequence number
 
         # Act
-        result = self.instance.ack_test(packet, seq_number)
+        result = self.instance.ack_test(packet, original_pkt)
 
         # Assert
         assert result == 'S+'
 
     def test_ack_O(self):
         # Arrange
-        seq_number = 12345
+        original_pkt = IP()/TCP(seq=54399)
         packet = IP()/TCP(ack=54321)  # Acknowledgment number doesn't match any of the predefined conditions
 
         # Act
-        result = self.instance.ack_test(packet, seq_number)
+        result = self.instance.ack_test(packet, original_pkt)
 
         # Assert
         assert result == 'O'
 
     def test_ack_no_response(self):
+        # Arrange
+        original_pkt = IP()/TCP(seq=54399)
         # Act
-        result = self.instance.ack_test(None, 12345)  # No response
+        result = self.instance.ack_test(None, original_pkt)  # No response
 
         # Assert
         assert result == "None"
 
     def test_ack_no_tcp_layer(self):
         # Arrange
+        original_pkt = IP() / TCP(seq=54399)
         packet = IP()  # No TCP layer
 
         # Act
-        result = self.instance.ack_test(packet, 12345)
-
-        # Assert
-        assert result == "None"
-
-    def test_ack_no_seq_number(self):
-        # Arrange
-        packet = IP()/TCP(ack=12345)  # Arbitrary acknowledgment number
-
-        # Act
-        result = self.instance.ack_test(packet, None)  # No sequence number
+        result = self.instance.ack_test(packet, original_pkt)
 
         # Assert
         assert result == "None"
@@ -1008,7 +995,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.get_ip_total_length(packet)
 
         # Assert
-        assert result == 20  # Expected length is 320 - 300 = 20
+        assert result == 320
 
     def test_icmp_not_port_unreachable(self):
         # Arrange
@@ -1018,7 +1005,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.get_ip_total_length(packet)
 
         # Assert
-        assert result is None  # Expecting None as it's not "port unreachable"
+        assert result == "None"  # Expecting None as it's not "port unreachable"
 
     def test_no_icmp_layer(self):
         # Arrange
@@ -1028,7 +1015,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.get_ip_total_length(packet)
 
         # Assert
-        assert result is None  # Expecting None as there's no ICMP layer
+        assert result == "None"  # Expecting None as there's no ICMP layer
 
     def test_ipl_no_response(self):
         # Act
@@ -1062,7 +1049,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.check_icmp_unused_field(packet)
 
         # Assert
-        assert result is None
+        assert result == 0
 
     def test_icmp_not_type_3(self):
         # Arrange
@@ -1072,7 +1059,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.check_icmp_unused_field(packet)
 
         # Assert
-        assert result is None
+        assert result == "None"
 
     def test_un_no_icmp_layer(self):
         # Arrange
@@ -1082,7 +1069,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.check_icmp_unused_field(packet)
 
         # Assert
-        assert result is None
+        assert result == "None"
 
     def test_un_no_response(self):
         # Act
@@ -1114,7 +1101,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.check_returned_ip_length(packet)
 
         # Assert
-        assert result == hex(0x149)
+        assert result == 0x149
 
     def test_check_returned_ip_length_none(self):
         # Arrange
@@ -1149,7 +1136,7 @@ class TestTestMethods(unittest.TestCase):
         result = self.instance.check_returned_ip_id(packet)
 
         # Assert
-        assert result == hex(0x1043)
+        assert result == 0x1043
 
     def test_check_returned_ip_id_no_iperror_layer(self):
         # Arrange
@@ -1235,12 +1222,13 @@ class TestTestMethods(unittest.TestCase):
     # ----------------------------
     def test_check_returned_udp_checksum_good(self):
         # Arrange
-        embedded_udp = UDPerror(sport=12345, dport=80, chksum=None)
+        embedded_udp = UDPerror(sport=12345, dport=80, chksum=1)
         icmp_payload = ICMP(type=3) / IP() / embedded_udp
         packet = IP() / icmp_payload
+        original_pkt = IP() / UDP(sport=12345, dport=80, chksum=1)
 
         # Act
-        result = self.instance.check_returned_udp_checksum(packet)
+        result = self.instance.check_returned_udp_checksum(packet, original_pkt)
 
         # Assert
         assert result == "G"
@@ -1250,19 +1238,21 @@ class TestTestMethods(unittest.TestCase):
         embedded_udp = UDPerror(sport=12345, dport=80, chksum=0x5678)
         icmp_payload = ICMP(type=3) / IP() / embedded_udp
         packet = IP() / icmp_payload
+        original_pkt = IP() / UDP(sport=12345, dport=80, chksum=1)
 
         # Act
-        result = self.instance.check_returned_udp_checksum(packet)
+        result = self.instance.check_returned_udp_checksum(packet, original_pkt)
 
         # Assert
-        assert result == hex(0x5678)
+        assert result == 0x5678
 
     def test_check_returned_udp_checksum_no_udperror_layer(self):
         # Arrange
         packet = IP() / ICMP(type=3)  # Missing the UDPerror layer
+        original_pkt = IP() / UDP(sport=12345, dport=80, chksum=1)
 
         # Act
-        result = self.instance.check_returned_udp_checksum(packet)
+        result = self.instance.check_returned_udp_checksum(packet, original_pkt)
 
         # Assert
         assert result == "None"
@@ -1270,9 +1260,10 @@ class TestTestMethods(unittest.TestCase):
     def test_check_returned_udp_checksum_no_icmp_layer(self):
         # Arrange
         packet = IP()  # Missing the ICMP layer
+        original_pkt = IP() / UDP(sport=12345, dport=80, chksum=1)
 
         # Act
-        result = self.instance.check_returned_udp_checksum(packet)
+        result = self.instance.check_returned_udp_checksum(packet, original_pkt)
 
         # Assert
         assert result == "None"

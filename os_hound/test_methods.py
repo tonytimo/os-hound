@@ -19,14 +19,6 @@ class TestMethods:
         # Calculate minimum difference considering the modular arithmetic space
         return min((a - b) & 0xFFFFFFFF, (b - a) & 0xFFFFFFFF)
 
-    def __timeval_subtract(self, a, b):
-        # Convert both timedeltas to microseconds
-        a_microseconds = a * 1000000
-        b_microseconds = b * 1000000
-
-        # Subtract and return the difference in microseconds
-        return int(a_microseconds - b_microseconds)
-
     def tcp_isn_gcd(self, responses: list[IP]):
         """
         The GCD test.
@@ -37,37 +29,31 @@ class TestMethods:
         :return: GCD value and the differences array
         """
         isns = []
-        times = []
         if isinstance(responses, list):
             for response in responses:
                 if response and response.haslayer(TCP):
                     isns.append(response[TCP].seq)
-                    times.append(response[IP].time)
 
         # Create an array of differences
         diff1 = [self.__calculate_difference(isns[i + 1], isns[i]) for i in range(len(isns) - 1)]
-        # diff2 = [self.__timeval_subtract(times[i + 1], times[i]) for i in range(len(times) - 1)]
-        diff2 =[]
 
         # Calculate the GCD of the differences
-        isn_gcd = reduce(gcd, diff1)
+        if diff1:
+            isn_gcd = reduce(gcd, diff1)
+        else:
+            isn_gcd = "None"
 
-        return diff1, diff2, isn_gcd
+        return diff1, isn_gcd
 
-    def tcp_isn_isr(self, diff1: list[int], diff2: list[int]):
+    def tcp_isn_isr(self, diff1: list[int]):
         """
         The ISR test.
         Calculate the ISR based on the given diff array and the time_intervals.
 
         :param diff1: List of seq differences between each two consecutive probe responses.
-        :param diff2: List of time differences between each two consecutive probe responses.
         :return: ISR value
         """
         if diff1:
-            # for i in range(len(diff1)):
-            #     diff1[i] = diff1[i] * 1000000
-            # # Calculate the rate of ISN counter increases per second for each diff1 value
-            # seq_rates = [diff / time for diff, time in zip(diff1, diff2) if time > 0]
             seq_rates = [diff / 0.000012 for diff in diff1]
 
             # Calculate the average rate
@@ -93,7 +79,7 @@ class TestMethods:
         :return: SP value
         """
         if len(seq_rates) < 4:
-            raise ValueError("At least four responses are required to calculate SP.")
+            return "None"
 
         # Optionally divide by the GCD if it is greater than 9
         if gcd_value > 9:
@@ -247,7 +233,7 @@ class TestMethods:
             if 0 <= avg_increment <= 5.66:
                 return 1
             elif 70 <= avg_increment <= 150:
-                return 2
+                return 7
             elif 150 <= avg_increment <= 350:
                 return 8
             else:
@@ -629,6 +615,8 @@ class TestMethods:
             # Check if the response is an ICMP "port unreachable" response
             if response.haslayer(ICMP) and response[ICMP].type == 3:
                 return response[IP].len
+            else:
+                return "None"
         else:
             return "None"
 

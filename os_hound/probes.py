@@ -75,7 +75,7 @@ class Probes:
         # Send the second ICMP request
         response2 = sr1(pkt2, timeout=1, verbose=0)
 
-        return [response1, response2], probe_type , [pkt1, pkt2]
+        return [response1, response2], probe_type, [pkt1, pkt2]
 
     def tcp_ecn_probe(self):
         """Generate and send a TCP packet with ECN flag set and collect the response."""

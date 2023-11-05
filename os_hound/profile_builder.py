@@ -17,8 +17,8 @@ class ProfileBuilder:
         os_dict = {"SEQ": {}, "OPS": {}, "WIN": {}, "ECN": {}, "T1": {}, "T2": {}, "T3": {}, "T4": {}, "T5": {}, "T6": {}, "T7": {}, "U1": {}, "IE": {}}
 
         # SEQ
-        diff1, diff2, gcd = self.methods.tcp_isn_gcd(self.responses["SYN"][0])
-        isr, seq_rates = self.methods.tcp_isn_isr(diff1, diff2)
+        diff1, gcd = self.methods.tcp_isn_gcd(self.responses["SYN"][0])
+        isr, seq_rates = self.methods.tcp_isn_isr(diff1)
         os_dict["SEQ"]["SP"] = self.methods.tcp_isn_sp(seq_rates, gcd)
         os_dict["SEQ"]["GCD"] = gcd
         os_dict["SEQ"]["ISR"] = isr
