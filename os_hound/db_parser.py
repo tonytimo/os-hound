@@ -14,7 +14,7 @@ class DbParser:
         filed_names = ["SEQ", "OPS", "WIN", "ECN", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "U1", "IE"]
         os_dicts = []
         # opening the database file
-        db_file = open("../nmap-db.txt", encoding="utf8")
+        db_file = open("nmap-db.txt", encoding="utf8")
         # parsing the database file
         db_os_list = db_file.read().split("\n\n")
         db_os_list.pop(0)

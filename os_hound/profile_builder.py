@@ -1,4 +1,4 @@
-from test_methods import TestMethods
+from os_hound.test_methods import TestMethods
 from scapy.layers.inet import TCP
 
 

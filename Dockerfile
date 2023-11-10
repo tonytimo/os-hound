@@ -10,7 +10,6 @@ COPY --from=base /usr/local/lib/python3.11 /usr/local/lib/python3.11
 
 WORKDIR /app
 COPY os_hound /app/os_hound
-COPY nmap-db.txt /app/nmap-db.txt
 
 ENTRYPOINT ["/bin/bash"]
 

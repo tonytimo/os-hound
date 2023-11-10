@@ -2,11 +2,11 @@ import sys
 import re
 import questionary
 from tabulate import tabulate
-from db_parser import DbParser
-from scoring import Scoring
-from profile_builder import ProfileBuilder
-from port_scanner import PortScanner
-from probes import Probes
+from os_hound.db_parser import DbParser
+from os_hound.scoring import Scoring
+from os_hound.profile_builder import ProfileBuilder
+from os_hound.port_scanner import PortScanner
+from os_hound.probes import Probes
 
 
 def main():
@@ -92,7 +92,7 @@ _______________________________________/\\\_____________________________________
             pass
         elif not bool(match):
             raise ValueError("You've entered an Invalid IP address.")
-        scan_type = questionary.select("Select a scan type:", choices=["Most common ports", "Port Range", "1000 first ports","All ports"]).ask()
+        scan_type = questionary.select("Select a scan type:", choices=["Most common ports", "Port Range", "1000 first ports", "All ports"]).ask()
         match scan_type:
             case "1000 first ports":
                 start = 1
