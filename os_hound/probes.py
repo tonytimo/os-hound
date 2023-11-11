@@ -182,4 +182,4 @@ class Probes:
         if response and response.haslayer(ICMP) and response[ICMP].type == 3 and response[ICMP].code == 3:
             return response, probe_type, pkt
         else:
-            return None
+            return None, probe_type, pkt

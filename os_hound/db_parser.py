@@ -1,5 +1,5 @@
 import re
-
+from os import path
 
 class DbParser:
     def __init__(self):
@@ -14,7 +14,9 @@ class DbParser:
         filed_names = ["SEQ", "OPS", "WIN", "ECN", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "U1", "IE"]
         os_dicts = []
         # opening the database file
-        db_file = open("nmap-db.txt", encoding="utf8")
+        package_directory = path.dirname(path.abspath(__file__))
+        database_directory = path.join(package_directory, 'nmap-db.txt')
+        db_file = open(database_directory, encoding="utf8")
         # parsing the database file
         db_os_list = db_file.read().split("\n\n")
         db_os_list.pop(0)

@@ -120,7 +120,10 @@ _______________________________________/\\\_____________________________________
     open_ports = PortScanner().syn_scan(target, start, end, common_ports_list)
 
     if not open_ports:
-        print(f"No open ports found on {target} between ports {start} and {end}.")
+        if end and start:
+            print(f"No open ports found on {target} between ports {start} and {end}.")
+        else:
+            print(f"No open ports found on {target}.")
         raise SystemExit
 
     print("Open Ports: ")

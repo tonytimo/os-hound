@@ -128,6 +128,8 @@ class TestMethods:
             for response in responses:
                 if response and response.haslayer(IP):
                     ip_ids.append(response[IP].id)
+                else:
+                    return "None"
 
             # Sort the IP ID values
             if not ip_ids:
@@ -183,10 +185,14 @@ class TestMethods:
             for response in responses:
                 if response and response.haslayer(IP):
                     tcp_ip_ids.append(response[IP].id)
+                else:
+                    return "None"
 
             for response in icmp_responses:
                 if response and response.haslayer(IP):
                     icmp_ip_ids.append(response[IP].id)
+                else:
+                    return "None"
 
             # Calculate 'avg' based on TCP IP IDs
             avg = (tcp_ip_ids[-1] - tcp_ip_ids[0]) / (len(tcp_ip_ids) - 1)
@@ -218,6 +224,8 @@ class TestMethods:
                     for option in response[TCP].options:
                         if option[0] == "Timestamp":
                             tsvals.append(option[1][0])
+                else:
+                    return "None"
 
             # Check for unsupported or zero values
             if None in tsvals:
@@ -227,7 +235,10 @@ class TestMethods:
 
             # Compute average increments per second
             increments = [(tsvals[i + 1] - tsvals[i]) / (tssents[i + 1] - tssents[i]) for i in range(len(tsvals) - 1)]
-            avg_increment = sum(increments) / len(increments)
+            if len(increments) != 0:
+                avg_increment = sum(increments) / len(increments)
+            else:
+                return "None"
 
             # Assign TS value based on avg_increment
             if 0 <= avg_increment <= 5.66:
@@ -273,6 +284,8 @@ class TestMethods:
                                     options_string += str(hex(option[1]))[2:].upper()
                                     continue
                                 options_string += str(option[1])
+                    else:
+                        return "None"
                     res_list.append(options_string)
                 return res_list
 
@@ -292,6 +305,8 @@ class TestMethods:
                                 options_string += str(hex(option[1]))[2:].upper()
                                 continue
                             options_string += str(option[1])
+                else:
+                    return "None"
                 return options_string
         else:
             return "None"
@@ -311,6 +326,8 @@ class TestMethods:
                     if response and response.haslayer(TCP):
                         window_size = response[TCP].window
                         ws_list.append(window_size)
+                    else:
+                        return "None"
                 return ws_list
             else:
                 if responses and responses.haslayer(TCP):
@@ -371,7 +388,7 @@ class TestMethods:
         :param response: List of ICMP echo request probe responses.
         :return: DFI test value ('N', 'S', 'Y', or 'O')
         """
-        if response:
+        if response[0]:
             if len(response) != 2:
                 return "None"
             if response[0].haslayer(IP) and response[1].haslayer(IP):
@@ -788,7 +805,7 @@ class TestMethods:
         :return: CD test value ('Z', 'S', hex value of the first packet code in hexadecimal in the <NN> notation,
          or 'O').
         """
-        if responses:
+        if responses[0] and responses[1]:
             cd_string = ""
             sent_probe_code1 = 9
             sent_probe_code2 = 0
