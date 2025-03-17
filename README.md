@@ -48,9 +48,14 @@ OS Hound performs the following steps:
 
 ## Installation
 
-### Installing Dependencies
 You can install the required packages using pip:
 
 ```bash
 pip install https://github.com/tonytimo/os-hound/releases/download/v0.1.0/os_hound-0.1.0-py3-none-any.whl
+```
 
+or 
+
+```bash
+pip install https://github.com/tonytimo/os-hound/releases/download/v0.1.0/os_hound-0.1.0.tar.gz
+```
